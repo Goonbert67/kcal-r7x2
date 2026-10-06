@@ -24,8 +24,10 @@ html{height:100%}
 :root{--gap:0px;--safeB:env(safe-area-inset-bottom)}   /* set by fixGap() */
 body{position:fixed;top:0;left:0;width:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 #probe{position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none}
-#main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:calc(env(safe-area-inset-top) + 12px) 16px 24px}
+#main{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:none;scrollbar-width:none;
+  padding:calc(env(safe-area-inset-top) + 22px) 16px 24px}   /* +22: clear iOS's soft fade under the status bar */
+#main::-webkit-scrollbar,.sheet::-webkit-scrollbar{display:none;width:0;height:0}
+.sheet{scrollbar-width:none}
 button{font:inherit;color:inherit;border:0;cursor:pointer}
 input{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);
   border-radius:10px;padding:10px 12px;width:100%;min-width:0}
@@ -143,6 +145,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 #wSpark{width:100%;height:56px;display:block;margin-top:8px}
 .wlist .item{padding:10px 4px}
 .linkbtn{background:none;color:var(--accent);font-size:14px;padding:12px 0 0;width:100%}
+.changed{border-color:var(--accent)!important;box-shadow:0 0 0 1px var(--accent)}
 .note{font-size:13px;color:var(--warn);margin:6px 0}
 .src{font-size:12px;color:var(--muted);margin-top:8px}
 .btns{display:flex;gap:10px;margin-top:14px}
@@ -240,6 +243,8 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <button class="x" data-close aria-label="Stäng">×</button>
   <h3 id="editTitle">Redigera</h3>
   <div class="brand" id="editSub">Värden per 100 g / 100 ml</div>
+  <button class="secondary" id="eLabel" style="width:100%;padding:13px;border-radius:12px;margin:8px 0 2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.3-1.8A1.5 1.5 0 0 1 10.6 3.6h2.8a1.5 1.5 0 0 1 1.2.6L15.9 6h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.4" r="3.4"/></svg>Fota näringstabellen</button>
+  <div class="brand" id="eLabelMsg" style="min-height:0"></div>
   <label class="f">Namn</label><input id="eName">
   <div class="row">
     <div><label class="f">kcal / 100</label><input id="eKcal" inputmode="decimal"></div>
@@ -298,7 +303,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 14<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 17<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <!-- Calendar -->
@@ -339,6 +344,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 <!-- AI photo -->
 <div class="sheet" id="aiSheet"><button class="x" data-close aria-label="Stäng">×</button><div id="aiBody"></div></div>
 <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
+<input type="file" id="labelInput" accept="image/*" capture="environment" hidden>
 
 <div class="toast" id="toast"></div>
 
@@ -899,7 +905,7 @@ function showProduct(fd, fromScan=false){
   cur = fd; amt = fd.pack || 100;
   open('prodSheet');
   const u = fd.unit || 'g';
-  const chips = [ fd.pack && {v:fd.pack, l:`Hela (${r0(fd.pack)} ${u})`}, fd.pack>=200 && {v:fd.pack/2,l:'Halva'}, {v:100,l:`100 ${u}`} ].filter(Boolean);
+  const chips = [ fd.pack && {v:fd.pack, l:`Hela (${r0(fd.pack)} ${u})`}, fd.pack && {v:fd.pack/2,l:'Halva'}, {v:100,l:`100 ${u}`} ].filter(Boolean);
   $('prodBody').innerHTML = `
     <h3>${esc(fd.name)}</h3>
     <div class="brand">${esc(fd.brand||'')}${fd.code ? ` · ${esc(fd.code)}`:''}</div>
@@ -1115,6 +1121,7 @@ function openEdit(fd, isNew=false){
   $('eP').value = v(fd.p); $('eC').value = v(fd.c); $('eF').value = v(fd.f);
   $('eS').value = v(fd.s); $('eSalt').value = v(fd.salt);
   $('eUnit').textContent = fd.unit || 'g'; editIsNew = isNew;
+  document.querySelectorAll('#editSheet .changed').forEach(x => x.classList.remove('changed')); $('eLabelMsg').textContent = '';
   open('editSheet');
 }
 $('editCancel').onclick = () => !editIsNew && editing && editing.kcal!=null ? showProduct(foods[editing.key] || editing) : closeAll();
@@ -1129,6 +1136,55 @@ $('editSave').onclick = () => {
   foods[fd.key] = fd; save(); render(); showProduct(fd);
 };
 $('manualBtn').onclick = openQuick;
+
+// ---------- read a nutrition table from a photo ----------
+const LABEL_SYS = `You read the nutrition facts table on a food package photo (often Swedish: "Näringsvärde", "per 100 g/ml",
+Energi, Fett, varav mättat fett, Kolhydrat, varav sockerarter, Fiber, Protein, Salt).
+Use the per 100 g or per 100 ml column, not per portion. If energy is given only in kJ, convert to kcal (kJ / 4.184).
+Values written like "<0,5" or "<0.5" mean 0. Use null for anything you cannot read.
+Also give the package size in g or ml if it is printed anywhere in the photo, else null.
+Reply with ONLY this JSON, no other text:
+{"per":"g|ml","kcal":0,"protein":0,"carbs":0,"sugars":0,"fat":0,"salt":0,"package":null,"readable":true}
+If there is no readable nutrition table: {"readable":false}`;
+async function askClaude(system, img, text){
+  const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{
+    'content-type':'application/json', 'x-api-key':aiKey, 'anthropic-version':'2023-06-01',
+    'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:AI_MODEL, max_tokens:600, system, messages:[{ role:'user', content:[
+      { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:img.split(',')[1] } },
+      { type:'text', text } ] }] }) });
+  const j = await res.json().catch(() => ({}));
+  if(!res.ok){ const msg = j?.error?.message || res.statusText;
+    throw new Error(res.status===401 ? 'Nyckeln fungerar inte – kolla den under Mål.' : /credit|balance/i.test(msg) ? 'Krediten är slut – fyll på under Billing på platform.claude.com.' : msg); }
+  const txt = (j.content||[]).map(c=>c.text||'').join('');
+  return JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+}
+$('eLabel').onclick = () => {
+  if(!aiKey){ $('photoBtn').click(); return; }                     // shows the key setup
+  $('labelInput').value = ''; $('labelInput').click();
+};
+$('labelInput').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const btn = $('eLabel'), label = btn.innerHTML;
+  btn.disabled = true; btn.textContent = 'Läser av tabellen…'; $('eLabelMsg').textContent = '';
+  try{
+    const img = await shrinkPhoto(f, 1400);                         // keep it sharp enough for small print
+    const r = await askClaude(LABEL_SYS, img, 'Läs av näringstabellen.');
+    if(!r.readable){ $('eLabelMsg').innerHTML = '<span style="color:var(--warn)">⚠ Hittade ingen läsbar näringstabell – prova närmare och rakt framifrån.</span>'; return; }
+    const v = x => x==null || x==='' ? null : String(Math.round(+x*100)/100).replace('.',',');
+    const fields = [['eKcal',r.kcal],['eP',r.protein],['eC',r.carbs],['eS',r.sugars],['eF',r.fat],['eSalt',r.salt],['ePack',r.package]];
+    let changed = 0;
+    for(const [id,val] of fields){
+      const nv = v(val); if(nv==null) continue;
+      if(num($(id).value) !== num(nv)){ $(id).value = nv; $(id).classList.add('changed'); changed++; }
+    }
+    if(r.per === 'ml' || r.per === 'g') $('eUnit').textContent = r.per;
+    $('eLabelMsg').innerHTML = changed
+      ? `<span style="color:var(--accent)">${changed} ${changed===1?'värde':'värden'} uppdaterade från fotot (markerade). Kolla och tryck Spara.</span>`
+      : 'Fotot stämmer med värdena som redan står här.';
+  }catch(err){ $('eLabelMsg').innerHTML = `<span style="color:var(--warn)">⚠ ${esc(err.message||err)}</span>`; }
+  finally{ btn.disabled = false; btn.innerHTML = label; }
+};
 
 // ---------- goal + backup ----------
 const aiKeyStatus = () => { $('aiKeyStatus').textContent = aiKey ? `Nyckel sparad (…${aiKey.slice(-4)}) – kameraknappen är redo.` : 'Ingen nyckel än. Tryck på kameraknappen på startsidan för instruktioner.'; };
