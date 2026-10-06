@@ -21,7 +21,8 @@
 html,body{margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;touch-action:manipulation;overscroll-behavior-y:none;
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 html{height:100%}
-body{height:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+:root{--gap:0px}   /* filled in by fixGap(): space iOS wrongly leaves below the web app */
+body{height:100%;height:calc(100dvh + var(--gap));display:flex;flex-direction:column;overflow:hidden}
 #main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:calc(env(safe-area-inset-top) + 12px) 16px 24px}
 button{font:inherit;color:inherit;border:0;cursor:pointer}
@@ -58,10 +59,11 @@ h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute
 .primary{background:var(--accent);color:#06210f}
 .secondary{background:var(--card2);color:var(--text)}
 /* sheets */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;z-index:10}
+.overlay{position:fixed;inset:0;bottom:calc(-1 * var(--gap));background:rgba(0,0,0,.75);display:none;z-index:10}
 .overlay.open{display:block}
-.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);border-radius:20px 20px 0 0;
-  padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);max-height:92vh;overflow:auto;z-index:11;
+.sheet{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));background:var(--card);border-top:1px solid var(--line);border-radius:20px 20px 0 0;
+  padding:14px 16px calc(max(env(safe-area-inset-bottom), 14px) + 10px);
+  max-height:calc(100% + var(--gap) - env(safe-area-inset-top) - 10px);overflow:auto;overscroll-behavior:contain;z-index:11;
   transform:translateY(105%);transition:transform .25s ease}
 .sheet.open{transform:none}
 .sheet h3{margin:0 0 4px;font-size:20px}
@@ -94,19 +96,23 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 .src{font-size:12px;color:var(--muted);margin-top:8px}
 .btns{display:flex;gap:10px;margin-top:14px}
 .btns button{flex:1;padding:14px;border-radius:12px;font-weight:600}
-.x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--card2);color:var(--muted);font-size:22px;line-height:36px;padding:0}
-.sheet h3{padding-right:44px}
+.x{position:sticky;top:0;float:right;margin:0 -4px 0 8px;width:36px;height:36px;border-radius:50%;background:var(--card2);color:var(--muted);font-size:22px;line-height:36px;padding:0;z-index:3;box-shadow:0 0 0 6px var(--card)}
+.sheet h3{margin-top:4px}
 .cam{position:relative;width:100%;aspect-ratio:1/1;max-height:52vh;margin:0 auto;background:#0a0a0a;border-radius:18px;overflow:hidden}
 .cam video{width:100%;height:100%;object-fit:cover;display:block}
 .frame{position:absolute;inset:14%;border:3px solid rgba(255,255,255,.9);border-radius:20px;box-shadow:0 0 0 999px rgba(0,0,0,.4);transition:border-color .15s}
 .frame.hit{border-color:var(--accent)}
+.frame.seen{border-color:#facc15}
+.hold{position:absolute;left:14%;right:14%;bottom:7%;height:6px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden;opacity:0;transition:opacity .15s}
+.hold.on{opacity:1}
+.hold>div{height:100%;width:0;background:var(--accent)}
 .camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted);font-size:14px}
 .torch{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);font-size:20px}
 .torch.on{background:var(--accent);color:#06210f}
 .linkbtn.center{text-align:center}
 .scanStatus{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px}
 .spin{padding:30px;text-align:center;color:var(--muted)}
-.toast{position:fixed;bottom:calc(max(env(safe-area-inset-bottom), 14px) + 82px);left:50%;transform:translateX(-50%);align-items:center;gap:14px;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
+.toast{position:fixed;bottom:calc(max(env(safe-area-inset-bottom), 14px) + 82px - var(--gap));left:50%;transform:translateX(-50%);align-items:center;gap:14px;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
   background:var(--card2);padding:10px 16px;border-radius:12px;z-index:20;font-size:15px;display:none}
 .toast button{background:none;color:var(--accent);font-weight:700;padding:2px 0}
 </style>
@@ -159,7 +165,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <button class="x" data-close aria-label="Stäng">×</button>
   <h3>Skanna</h3>
   <div class="brand">Streckkoden i rutan – liggande eller stående spelar ingen roll</div>
-  <div class="cam"><video id="video" playsinline muted autoplay></video><div class="frame" id="frame"></div>
+  <div class="cam"><video id="video" playsinline muted autoplay></video><div class="frame" id="frame"></div><div class="hold" id="hold"><div id="holdBar"></div></div>
     <div class="camMsg" id="camMsg">Startar kameran…</div><button class="torch" id="torchBtn" hidden aria-label="Lampa">⚡</button></div>
   <div class="scanStatus" id="scanStatus"></div>
   <label class="f">Eller skriv in koden</label>
@@ -177,7 +183,8 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <label class="f">Namn</label><input id="eName">
   <div class="row">
     <div><label class="f">kcal / 100</label><input id="eKcal" inputmode="decimal"></div>
-    <div><label class="f">Förpackning (g/ml)</label><input id="ePack" inputmode="decimal"></div>
+    <div><label class="f">Förpackning</label><div class="row" style="margin:0;gap:6px"><input id="ePack" inputmode="decimal">
+      <button type="button" class="chip" id="eUnit" style="flex:0 0 52px;border-radius:10px">g</button></div></div>
   </div>
   <div class="row">
     <div><label class="f">Protein</label><input id="eP" inputmode="decimal"></div>
@@ -227,7 +234,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 6</div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 7<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -420,6 +427,9 @@ function gtinOK(code){
 }
 let stream = null, scanning = false, busy = false, hits = {}, torchOn = false;
 let frames = 0, fpsT = 0, decodeMs = 0;
+const HOLD_MS = 700;          // barcode must stay readable this long before it's accepted
+let seen = null;              // { code, first, last }
+function showHold(p){ $('hold').classList.toggle('on', p>0); $('holdBar').style.width = (p*100)+'%'; $('frame').classList.toggle('seen', p>0 && p<1); }
 const ANGLES = [0, 45, 0, 22.5, 0, 67.5]; let angIdx = 0;
 const cropCanvas = document.createElement('canvas'), cropCtx = cropCanvas.getContext('2d', { willReadFrequently:true });
 const status = t => { $('scanStatus').textContent = t; };
@@ -427,7 +437,7 @@ const status = t => { $('scanStatus').textContent = t; };
 async function startScan(){
   open('scanSheet'); $('codeInput').value=''; $('frame').classList.remove('hit');
   $('camMsg').textContent = 'Startar kameran…'; $('camMsg').style.display = 'flex'; $('torchBtn').hidden = true;
-  hits = {}; scanning = true; frames = 0; fpsT = performance.now();
+  hits = {}; seen = null; showHold(0); scanning = true; frames = 0; fpsT = performance.now();
   status(zx ? 'Läsmotor redo' : 'Laddar läsmotor…');
   loadZX().then(() => scanning && status('Läsmotor redo')).catch(() => status('Läsmotorn kunde inte laddas: ' + zxError));
   try{
@@ -473,19 +483,25 @@ async function scanLoop(){
       frames++;
       const now = performance.now();
       if(now - fpsT > 700){ status(`Letar… ${Math.round(frames*1000/(now-fpsT))} bilder/s · ${Math.round(decodeMs)} ms`); frames = 0; fpsT = now; }
-      for(const k in hits) if(now - hits[k].t > 1500) delete hits[k];
+      let got = null;
       for(const r of res){
         if(!r.isValid) continue;
         const code = String(r.text||'').replace(/\D/g,'');
-        const short = code.length === 8;                            // EAN-8: easier to misread, needs confirming
-        if(!gtinOK(code)) continue;
-        const h = hits[code] = { n:(hits[code]?.n||0)+1, t: hits[code]?.t || now };
-        if(h.n >= (short ? 2 : 1)){                                 // EAN-13/UPC-A with valid check digit: accept at once
-          $('frame').classList.add('hit'); status(`Hittade ${code}`); navigator.vibrate?.(40);
-          scanning = false; stopScan(); lookup(code, true);
-          busy = false; return;
-        }
+        if(gtinOK(code)){ got = code; break; }
       }
+      if(got){
+        if(seen && seen.code === got && now - seen.last < 450) seen.last = now;
+        else seen = { code:got, first:now, last:now };            // new or different code: start over
+      } else if(seen && now - seen.last > 450){ seen = null; }   // lost it for a moment too long
+      const p = seen ? Math.min(1, (now - seen.first) / HOLD_MS) : 0;
+      showHold(p);
+      if(seen && p >= 1){
+        const code = seen.code;
+        $('frame').classList.add('hit'); status(`Hittade ${code}`); navigator.vibrate?.(40);
+        scanning = false; stopScan(); setTimeout(() => lookup(code, true), 150);
+        busy = false; return;
+      }
+      if(seen) status('Håll still…');
     }catch(e){ status('Fel vid läsning: ' + (e?.message || e)); }
     busy = false;
   }
@@ -516,7 +532,7 @@ async function lookup(code, fromScan=false){
   open('prodSheet');
   $('prodBody').innerHTML = `<div class="spin">Söker ${esc(code)}…</div>`;
   try{
-    const get = async c => (await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity`)).json();
+    const get = async c => (await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity,categories_tags`)).json();
     let j = await get(code);
     if((j.status !== 1 || !j.product) && code.length===12) j = await get('0'+code);   // UPC-A stored as EAN-13
     if(j.status !== 1 || !j.product) throw 'notfound';
@@ -525,7 +541,8 @@ async function lookup(code, fromScan=false){
     if(kcal==null && num(n['energy-kj_100g'])!=null) kcal = num(n['energy-kj_100g'])/4.184;
     if(kcal==null && num(n['energy_100g'])!=null) kcal = num(n['energy_100g'])/4.184;
     const qty = pr.quantity || '';
-    const unit = /ml|cl|\bl\b|liter/i.test(qty) || pr.product_quantity_unit==='ml' ? 'ml' : 'g';
+    const drink = (pr.categories_tags||[]).some(c => /beverages|drinks|waters|sodas|juices|milks/.test(c));
+    const unit = /\d\s*(ml|cl|dl|l|liter)\b/i.test(qty) || pr.product_quantity_unit==='ml' || drink ? 'ml' : 'g';
     const fd = {
       key: code, code, src:'off',
       name: pr.product_name_sv || pr.product_name || 'Okänd produkt',
@@ -622,7 +639,8 @@ function addEntry(fd, amount){
 }
 
 // ---------- edit / manual ----------
-let editing = null;
+let editing = null, editIsNew = false;
+$('eUnit').onclick = () => { $('eUnit').textContent = $('eUnit').textContent==='g' ? 'ml' : 'g'; };
 function openEdit(fd, isNew=false){
   editing = fd;
   $('editTitle').textContent = isNew ? 'Ny produkt' : 'Redigera';
@@ -631,23 +649,25 @@ function openEdit(fd, isNew=false){
   $('eKcal').value = fd.missingKcal ? '' : v(fd.kcal); $('ePack').value = v(fd.pack);
   $('eP').value = v(fd.p); $('eC').value = v(fd.c); $('eF').value = v(fd.f);
   $('eS').value = v(fd.s); $('eSalt').value = v(fd.salt);
+  $('eUnit').textContent = fd.unit || 'g'; editIsNew = isNew;
   open('editSheet');
 }
-$('editCancel').onclick = () => editing && foods[editing.key] ? showProduct(foods[editing.key]) : closeAll();
+$('editCancel').onclick = () => !editIsNew && editing && editing.kcal!=null ? showProduct(foods[editing.key] || editing) : closeAll();
 $('editSave').onclick = () => {
   const kcal = num($('eKcal').value);
   if(kcal==null){ toast('Fyll i kcal'); return; }
   const fd = { ...editing,
     name: $('eName').value.trim() || 'Namnlös', kcal, missingKcal:false,
     pack: num($('ePack').value), p:num($('eP').value), c:num($('eC').value), f:num($('eF').value),
-    s:num($('eS').value), salt:num($('eSalt').value),
+    s:num($('eS').value), salt:num($('eSalt').value), unit: $('eUnit').textContent,
     edited: editing.src==='off', used: Date.now() };
   foods[fd.key] = fd; save(); render(); showProduct(fd);
 };
 $('manualBtn').onclick = openQuick;
 
 // ---------- goal + backup ----------
-$('settingsBtn').onclick = () => { $('goalInput').value = goal; $('pgoalInput').value = pgoal || ''; open('goalSheet'); };
+$('settingsBtn').onclick = () => {
+  $('diag').textContent = `skärm ${screen.height} · fönster ${innerHeight} · justering ${getComputedStyle(document.documentElement).getPropertyValue('--gap').trim()}`; $('goalInput').value = goal; $('pgoalInput').value = pgoal || ''; open('goalSheet'); };
 $('goalCancel').onclick = () => closeAll();
 $('goalSave').onclick = () => { const g = num($('goalInput').value); if(g>0) goal=r0(g); pgoal = r0(num($('pgoalInput').value)||0); save(); render(); closeAll(); };
 $('exportBtn').onclick = () => {
@@ -661,6 +681,20 @@ $('importFile').onchange = async e => {
     if(d.log) log = d.log; if(d.foods) foods = d.foods; if(d.goal) goal = d.goal; if(d.pgoal!=null) pgoal = d.pgoal; if(d.weights) weights = d.weights;
     save(); render(); closeAll(); toast('Importerat'); }catch{ toast('Ogiltig fil'); }
 };
+
+// iOS home-screen web apps sometimes lay out as if Safari's toolbar were still there,
+// leaving a dead strip at the bottom. Measure it and stretch the layout over it.
+function fixGap(){
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  const a = document.activeElement;
+  if(!standalone || (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))) return;   // keyboard open: leave it
+  const portrait = innerHeight >= innerWidth;
+  const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  const g = full - innerHeight;
+  document.documentElement.style.setProperty('--gap', (g > 0 && g <= 90 ? g : 0) + 'px');
+}
+fixGap(); addEventListener('resize', fixGap); addEventListener('orientationchange', () => setTimeout(fixGap, 300));
+document.addEventListener('focusout', () => setTimeout(fixGap, 350));
 
 render();
 if('serviceWorker' in navigator){
