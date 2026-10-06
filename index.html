@@ -34,8 +34,58 @@ input:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .daynav{display:flex;align-items:center;gap:8px}
 .daynav button{background:var(--card);width:36px;height:36px;border-radius:50%;font-size:18px}
 .daynav button:disabled{opacity:.3}
-#dayLabel{font-weight:600;min-width:110px;text-align:center}
+#dayLabel{font-weight:600;min-width:120px;text-align:center;background:none;width:auto;height:auto;border-radius:10px;padding:6px 8px;font-size:17px}
+#dayLabel::after{content:' ▾';color:var(--muted);font-size:12px}
+.calnav{display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px}
+.calnav button{background:var(--card2);width:36px;height:36px;border-radius:50%;font-size:18px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.calgrid .h{font-size:11px;color:var(--muted);text-align:center;padding:2px 0}
+.cday{aspect-ratio:1/1.08;border-radius:10px;background:var(--card2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;position:relative;padding:0}
+.cday small{font-size:9px;color:var(--muted);margin-top:1px}
+.cday.on{background:rgba(74,222,128,.22);color:#d9fbe5}
+.cday.on small{color:#9fe8b8}
+.cday.over{background:rgba(245,158,11,.22)}
+.cday.today{box-shadow:inset 0 0 0 2px var(--text)}
+.cday.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.cday.future{opacity:.3;pointer-events:none}
+.cday i{position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:#60a5fa}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.stats div{background:var(--card2);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted)}
+.stats b{display:block;color:var(--text);font-size:18px}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend span::before{content:'';display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--c)}
+.wbar{height:8px;background:var(--card2);border-radius:5px;margin:10px 0 0;overflow:hidden}
+.wbar>div{height:100%;background:#60a5fa;border-radius:5px;transition:width .3s}
+.wbtns{display:flex;gap:8px;margin-top:10px}
+.wbtns button{flex:1;background:var(--card2);border-radius:10px;padding:9px 4px;font-size:14px}
+.wbtns button.min{flex:0 0 44px}
+.aiimg{width:100%;max-height:30vh;object-fit:cover;border-radius:14px;display:block;margin:6px 0 10px}
+.airow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.airow .info{flex:1;min-width:0}
+.airow .info div:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.airow .meta{font-size:12px;color:var(--muted)}
+.airow input{width:76px;flex:none;padding:8px;text-align:right}
+.airow .del{background:none;color:var(--muted);font-size:20px;padding:0 2px}
+.conf{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;background:var(--card2);color:var(--muted);margin-left:6px}
+.spinner{width:34px;height:34px;border:3px solid var(--card2);border-top-color:var(--accent);border-radius:50%;animation:sp 0.8s linear infinite;margin:10px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fab button.icon{flex:0 0 58px;padding:16px 0;font-size:20px}
 .icon-btn{background:var(--card);padding:8px 12px;border-radius:10px;font-size:14px;color:var(--muted)}
+.topbtns{display:flex;gap:8px}
+.seg{display:flex;background:var(--card2);border-radius:12px;padding:3px;margin:10px 0 0}
+.seg button{flex:1;padding:9px 4px;border-radius:9px;font-size:14px;color:var(--muted);background:none}
+.seg button.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.seg.small button{padding:6px 4px;font-size:13px}
+.pnav{display:flex;align-items:center;justify-content:space-between;margin:12px 0 4px}
+.pnav button{background:var(--card2);width:36px;height:36px;border-radius:50%;font-size:18px}
+.pnav button:disabled{opacity:.3}
+.dayhead{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:16px 4px 6px}
+.src{font-size:11px;border-radius:6px;padding:1px 6px;background:var(--card2);color:var(--muted);margin-right:4px}
+.aicards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.aicard{background:var(--card2);border-radius:14px;overflow:hidden;text-align:left;padding:0}
+.aicard img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.aicard div{padding:8px 10px;font-size:12px;color:var(--muted)}
+.aicard b{color:var(--text);font-size:15px;display:block}
 .summary{background:var(--card);border-radius:18px;padding:18px;margin-bottom:16px}
 .big{font-size:44px;font-weight:700;letter-spacing:-1px;line-height:1}
 .big small{font-size:16px;font-weight:500;color:var(--muted);letter-spacing:0}
@@ -125,10 +175,10 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 <div class="top">
   <div class="daynav">
     <button id="prevDay" aria-label="Föregående dag">‹</button>
-    <div id="dayLabel">Idag</div>
+    <button id="dayLabel">Idag</button>
     <button id="nextDay" aria-label="Nästa dag">›</button>
   </div>
-  <button class="icon-btn" id="settingsBtn">Mål</button>
+  <div class="topbtns"><button class="icon-btn" id="histBtn">Historik</button><button class="icon-btn" id="settingsBtn">Mål</button></div>
 </div>
 
 <div class="summary">
@@ -140,6 +190,13 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
     <div><b id="mC">0</b>kolhydr.</div>
     <div><b id="mF">0</b>fett</div>
   </div>
+</div>
+
+<h2>Vatten</h2>
+<div class="wcard" id="waterCard">
+  <div class="wtop"><b id="wtNow">0 L</b><span id="wtGoal"></span></div>
+  <div class="wbar"><div id="wtFill" style="width:0"></div></div>
+  <div class="wbtns"><button id="wt250">+ Glas 2,5 dl</button><button id="wt500">+ Flaska 5 dl</button><button class="min" id="wtMinus" aria-label="Minska">−</button></div>
 </div>
 
 <h2>Vikt</h2>
@@ -156,6 +213,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 </div>
 
 <div class="fab">
+  <button class="secondary icon" id="photoBtn" aria-label="Foto av mat"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.3-1.8A1.5 1.5 0 0 1 10.6 3.6h2.8a1.5 1.5 0 0 1 1.2.6L15.9 6h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.4" r="3.4"/></svg></button>
   <button class="secondary" id="manualBtn">+ Manuellt</button>
   <button class="primary" id="scanBtn">Skanna</button>
 </div>
@@ -168,7 +226,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h3>Skanna</h3>
   <div class="brand">Streckkoden i rutan – liggande eller stående spelar ingen roll</div>
   <div class="cam"><video id="video" playsinline muted autoplay></video><div class="frame" id="frame"></div><div class="hold" id="hold"><div id="holdBar"></div></div>
-    <div class="camMsg" id="camMsg">Startar kameran…</div><button class="torch" id="torchBtn" hidden aria-label="Lampa">⚡</button></div>
+    <div class="camMsg" id="camMsg">Startar kameran…</div><button class="torch" id="torchBtn" hidden aria-label="Lampa"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto"><path d="M13 2 5 13.5h6L10 22l9-12h-6.5z"/></svg></button></div>
   <div class="scanStatus" id="scanStatus"></div>
   <label class="f">Eller skriv in koden</label>
   <div class="row"><input id="codeInput" inputmode="numeric" placeholder="t.ex. 4335619347960"><button class="primary" id="codeGo" style="flex:0 0 80px;border-radius:10px">Sök</button></div>
@@ -221,7 +279,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h3>Vikt</h3>
   <div class="brand" id="wDayTxt"></div>
   <div class="row"><input id="wInput" inputmode="decimal" placeholder="kg"><button class="primary" id="wSave" style="flex:0 0 90px;border-radius:10px">Spara</button></div>
-  <div class="brand" style="margin-top:12px">Väg dig gärna samma tid varje dag, t.ex. på morgonen. Dagsvikten svänger 1–2 kg av vätska – titta på 7-dagarssnittet.</div>
+  <div class="brand" style="margin-top:12px">En gång i veckan räcker – samma veckodag, på morgonen innan frukost. Vikten svänger 1–2 kg av vätska, så titta på trenden över några veckor.</div>
   <div class="wlist list" id="wList" style="background:none"></div>
   <div class="btns"><button class="secondary" id="wClose">Stäng</button></div>
 </div>
@@ -233,11 +291,54 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <label class="f">kcal per dag</label><input id="goalInput" inputmode="numeric">
   <label class="f">Proteinmål, gram per dag (tomt = av)</label><input id="pgoalInput" inputmode="numeric">
   <div class="btns"><button class="secondary" id="goalCancel">Avbryt</button><button class="primary" id="goalSave">Spara</button></div>
+  <h2>AI-foto</h2>
+  <div class="brand" id="aiKeyStatus"></div>
+  <div class="row"><input id="aiKeyInput" type="password" autocomplete="off" placeholder="sk-ant-…"><button class="primary" id="aiKeySave" style="flex:0 0 80px;border-radius:10px">Spara</button></div>
+  <button class="linkbtn" id="aiKeyRemove" style="color:var(--bad);padding-top:4px">Ta bort nyckeln</button>
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 11<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 14<br><span id="diag" style="font-size:11px"></span></div>
 </div>
+
+<!-- Calendar -->
+<div class="sheet" id="calSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
+  <h3>Kalender</h3>
+  <div class="calnav"><button id="calPrev" aria-label="Föregående månad">‹</button><b id="calTitle"></b><button id="calNext" aria-label="Nästa månad">›</button></div>
+  <div class="calgrid" id="calGrid"></div>
+  <div class="legend"><span style="--c:rgba(74,222,128,.5)">loggad dag</span><span style="--c:rgba(245,158,11,.5)">över målet</span><span style="--c:#60a5fa">vägning</span></div>
+  <div class="stats" id="calStats"></div>
+  <h2>Mest ätet senaste 30 dagarna</h2>
+  <div class="list" id="topFoods"></div>
+  <div class="btns"><button class="secondary" id="allFoodsBtn">Alla sparade produkter</button></div>
+</div>
+
+<!-- All saved foods -->
+<div class="sheet" id="foodsSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
+  <h3>Sparade produkter</h3>
+  <input id="foodSearch" placeholder="Sök…" style="margin:10px 0" autocomplete="off">
+  <div class="list" id="foodList"></div>
+</div>
+
+<!-- History -->
+<div class="sheet" id="histSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
+  <h3>Historik</h3>
+  <div class="seg" id="histTab"><button data-t="log" class="on">Skannat &amp; loggat</button><button data-t="ai">AI-foton</button></div>
+  <div class="seg small" id="histPer"><button data-p="week" class="on">Vecka</button><button data-p="month">Månad</button></div>
+  <div class="pnav"><button id="hPrev" aria-label="Föregående">‹</button><b id="hTitle"></b><button id="hNext" aria-label="Nästa">›</button></div>
+  <div class="stats" id="hStats"></div>
+  <div id="hBody"></div>
+</div>
+
+<!-- One saved AI meal -->
+<div class="sheet" id="mealSheet"><button class="x" data-close aria-label="Stäng">×</button><div id="mealBody"></div></div>
+
+<!-- AI photo -->
+<div class="sheet" id="aiSheet"><button class="x" data-close aria-label="Stäng">×</button><div id="aiBody"></div></div>
+<input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
 
 <div class="toast" id="toast"></div>
 
@@ -252,7 +353,9 @@ let foods = S.get('kc_foods', {});   // { key: food }  key = barcode or 'm:<id>'
 let goal  = S.get('kc_goal', 2000);
 let pgoal = S.get('kc_pgoal', 0);    // 0 = off
 let weights = S.get('kc_weight', {}); // { 'YYYY-MM-DD': kg }
-const save = () => { S.set('kc_log', log); S.set('kc_foods', foods); S.set('kc_goal', goal); S.set('kc_pgoal', pgoal); S.set('kc_weight', weights); };
+let water = S.get('kc_water', {});     // { 'YYYY-MM-DD': ml }
+let aiKey = S.get('kc_aikey', '');      // stays on this phone, never in backups
+const save = () => { S.set('kc_log', log); S.set('kc_foods', foods); S.set('kc_goal', goal); S.set('kc_pgoal', pgoal); S.set('kc_weight', weights); S.set('kc_water', water); };
 
 // ---------- helpers ----------
 const $ = id => document.getElementById(id);
@@ -303,7 +406,7 @@ function render(){
       <button class="del" data-del="${i}" aria-label="Ta bort">×</button>
     </div>`).join('') : '<div class="empty">Inget loggat ännu</div>';
 
-  renderWeight();
+  renderWeight(); renderWater();
 
   // recent foods (unique, newest first)
   const recent = Object.values(foods).sort((a,b)=>(b.used||0)-(a.used||0)).slice(0,8);
@@ -322,6 +425,7 @@ document.addEventListener('click', e => {
   if(del){ const k=dkey(day), i=+del.dataset.del, [gone]=log[k].splice(i,1); if(!log[k].length) delete log[k]; save(); render();
     toast(`Tog bort ${gone.name}`, ()=>{ (log[k]=log[k]||[]).splice(i,0,gone); save(); render(); }); return; }
   if(e.target.closest('[data-close]')){ closeAll(); return; }
+  if(e.target.closest('#hBody [data-meal]')) return;               // history: AI rows open their photo
   const op = e.target.closest('[data-open]');
   if(op && foods[op.dataset.open]) showProduct(foods[op.dataset.open]);
 });
@@ -334,32 +438,68 @@ function avg7(endKey){            // average of weigh-ins in the 7 days ending e
   const v = []; for(let i=0;i<7;i++){ const w = weights[addDays(endKey,-i)]; if(w) v.push(w); }
   return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
 }
+function weighInsBefore(k, days){              // [[daysAgo, kg]] within the window, oldest first
+  const out = []; for(let i=days-1;i>=0;i--){ const dk = addDays(k,-i); if(weights[dk]) out.push([days-1-i, weights[dk]]); } return out;
+}
+function weeklyRate(k){                         // kg per week from a straight-line fit over the last 5 weeks
+  const pts = weighInsBefore(k, 35);
+  if(pts.length < 2 || pts[pts.length-1][0] - pts[0][0] < 5) return null;
+  const n = pts.length, mx = pts.reduce((a,p)=>a+p[0],0)/n, my = pts.reduce((a,p)=>a+p[1],0)/n;
+  let num=0, den=0; pts.forEach(([x,y]) => { num += (x-mx)*(y-my); den += (x-mx)**2; });
+  return den ? num/den*7 : null;
+}
+function latestWeight(k){ const ks = Object.keys(weights).filter(x => x <= k).sort(); return ks.length ? [ks[ks.length-1], weights[ks[ks.length-1]]] : null; }
 function renderWeight(){
-  const k = dkey(day), keys = Object.keys(weights).sort();
-  const w = weights[k];
-  const a = avg7(k), aPrev = avg7(addDays(k,-7));
-  $('wNow').textContent = w ? `${r1(w)} kg` : keys.length ? 'Ej loggad' : '–';
-  $('wNow').style.color = w ? '' : 'var(--muted)';
-  if(a==null) $('wTrend').textContent = 'Tryck för att logga vikt';
-  else {
-    let t = `snitt 7 d: ${r1(a)} kg`;
-    if(aPrev!=null){ const d = a - aPrev; t += ` · ${d<=0?'−':'+'}${Math.abs(d).toFixed(1).replace('.',',')} kg/vecka`; }
-    $('wTrend').textContent = t;
-  }
-  // sparkline: last 30 days, dots = weigh-ins, line = 7-day average
-  const pts = [], avg = [];
-  for(let i=29;i>=0;i--){ const dk = addDays(k,-i), x = (29-i)/29*300;
-    if(weights[dk]) pts.push([x,weights[dk]]); const m = avg7(dk); if(m!=null) avg.push([x,m]); }
+  const k = dkey(day), last = latestWeight(k);
+  if(!last){ $('wNow').textContent = '–'; $('wNow').style.color=''; $('wTrend').textContent = 'Tryck för att logga vikt'; $('wSpark').style.display='none'; return; }
+  const [lk, lw] = last, ago = Math.round((new Date(k+'T12:00') - new Date(lk+'T12:00'))/864e5);
+  $('wNow').textContent = `${r1(lw)} kg`; $('wNow').style.color = '';
+  const rate = weeklyRate(k);
+  let t = ago===0 ? 'vägd idag' : ago===1 ? 'vägd igår' : `vägd för ${ago} dagar sedan`;
+  if(rate!=null) t += ` · ${rate<=0?'−':'+'}${Math.abs(rate).toFixed(1).replace('.',',')} kg/vecka`;
+  if(ago >= 7) t += ' · dags att väga dig';
+  $('wTrend').textContent = t;
+  // sparkline over 12 weeks: dots = weigh-ins; line = 7-day average if you weigh often, else joins the dots
+  // span from the first weigh-in (at least 2 weeks, at most 12) so a few weeks of data fills the chart
+  const firstK = Object.keys(weights).filter(x => x <= k).sort()[0];
+  const since = Math.round((new Date(k+'T12:00') - new Date(firstK+'T12:00'))/864e5) + 1;
+  const W = Math.min(84, Math.max(14, since)), pts = weighInsBefore(k, W).map(([x,v]) => [x/(W-1)*300, v]);
   const svg = $('wSpark');
   if(pts.length < 2){ svg.style.display='none'; return; }
   svg.style.display='';
-  const ys = pts.map(p=>p[1]).concat(avg.map(p=>p[1]));
+  let line = pts;
+  if(pts.length >= 12){ line = []; for(let i=W-1;i>=0;i--){ const m = avg7(addDays(k,-i)); if(m!=null) line.push([(W-1-i)/(W-1)*300, m]); } }
+  const ys = pts.map(p=>p[1]).concat(line.map(p=>p[1]));
   let lo = Math.min(...ys), hi = Math.max(...ys); if(hi-lo < 1){ const m=(hi+lo)/2; lo=m-.5; hi=m+.5; }
   const Y = v => 50 - (v-lo)/(hi-lo)*44;
   svg.innerHTML =
-    pts.map(([x,v])=>`<circle cx="${x.toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.5" fill="#9aa0a8" opacity=".7"/>`).join('') +
-    `<polyline fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${avg.map(([x,v])=>`${x.toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>`;
+    `<polyline fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" points="${line.map(([x,v])=>`${x.toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>` +
+    pts.map(([x,v])=>`<circle cx="${x.toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" fill="#d1d5db"/>`).join('');
 }
+
+// ---------- water ----------
+function waterGoal(){                               // rough: ~33 ml per kg body weight, 1,5–4 L
+  const w = latestWeight(dkey(day));
+  return w ? Math.min(4000, Math.max(1500, Math.round(w[1]*33/100)*100)) : 2000;
+}
+const L = ml => (Math.round(ml/100)/10).toString().replace('.',',') + ' L';
+function renderWater(){
+  const k = dkey(day), ml = water[k] || 0, g = waterGoal();
+  $('wtNow').textContent = L(ml);
+  $('wtGoal').textContent = `mål ca ${L(g)}` + (latestWeight(k) ? '' : ' · logga vikt för eget mål');
+  $('wtFill').style.width = Math.min(100, ml/g*100) + '%';
+  $('wtFill').style.background = ml >= g ? 'var(--accent)' : '#60a5fa';
+}
+function addWater(d){
+  const k = dkey(day), before = water[k] || 0;
+  water[k] = Math.max(0, before + d); if(!water[k]) delete water[k];
+  save(); renderWater();
+  if(d > 0) toast(`+${(d/100).toString().replace('.',',')} dl vatten`, () => { if(before) water[k] = before; else delete water[k]; save(); renderWater(); });
+}
+$('wt250').onclick = () => addWater(250);
+$('wt500').onclick = () => addWater(500);
+$('wtMinus').onclick = () => addWater(-250);
+
 function openWeight(){
   const k = dkey(day);
   $('wDayTxt').textContent = k===todayKey() ? 'Idag' : day.toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'short'});
@@ -398,6 +538,148 @@ $('qAdd').onclick = () => {
 };
 $('qKcal').onkeydown = e => { if(e.key==='Enter') $('qAdd').click(); };
 $('qProduct').onclick = () => openEdit({ key:'m:'+Date.now().toString(36), src:'me', name:$('qName').value.trim(), kcal:null, unit:'g' }, true);
+
+// ---------- calendar ----------
+let calMonth = null;
+const dayKcal = k => (log[k]||[]).reduce((a,e)=>a+e.kcal,0);
+function openCal(){ calMonth = new Date(day.getFullYear(), day.getMonth(), 1, 12); renderCal(); open('calSheet'); }
+function renderCal(){
+  const y = calMonth.getFullYear(), m = calMonth.getMonth(), today = todayKey(), sel = dkey(day);
+  $('calTitle').textContent = calMonth.toLocaleDateString('sv-SE', { month:'long', year:'numeric' }).replace(/^./, c=>c.toUpperCase());
+  const now = new Date(); $('calNext').disabled = y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth());
+  const first = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m+1, 0).getDate();
+  let h = ['M','T','O','T','F','L','S'].map(d=>`<div class="h">${d}</div>`).join('') + '<div></div>'.repeat(first);
+  for(let d=1; d<=days; d++){
+    const k = `${y}-${pad(m+1)}-${pad(d)}`, kc = dayKcal(k), n = (log[k]||[]).length;
+    const cls = ['cday', n && 'on', n && kc > goal*1.05 && 'over', k===today && 'today', k===sel && k!==today && 'sel', k > today && 'future'].filter(Boolean).join(' ');
+    h += `<button class="${cls}" data-day="${k}">${d}${n ? `<small>${r0(kc)}</small>` : ''}${weights[k] ? '<i></i>' : ''}</button>`;
+  }
+  $('calGrid').innerHTML = h;
+  // stats
+  const monthDays = Object.keys(log).filter(k => k.startsWith(`${y}-${pad(m+1)}`) && log[k].length).length;
+  let streak = 0, k = today; if(!(log[k]||[]).length) k = addDays(k,-1);
+  while((log[k]||[]).length){ streak++; k = addDays(k,-1); }
+  const recent = []; for(let i=0;i<30 && recent.length<7;i++){ const dk = addDays(today,-i); if((log[dk]||[]).length) recent.push(dk); }
+  const avgK = recent.length ? recent.reduce((a,dk)=>a+dayKcal(dk),0)/recent.length : 0;
+  const avgP = recent.length ? recent.reduce((a,dk)=>a+(log[dk]||[]).reduce((b,e)=>b+(e.p||0),0),0)/recent.length : 0;
+  const total = Object.values(log).filter(x=>x.length).length;
+  $('calStats').innerHTML = `
+    <div><b>${streak} ${streak===1?'dag':'dagar'}</b>i rad just nu</div>
+    <div><b>${monthDays}</b>loggade dagar i ${calMonth.toLocaleDateString('sv-SE',{month:'long'})}</div>
+    <div><b>${recent.length ? r0(avgK)+' kcal' : '–'}</b>snitt per dag${recent.length ? ` (senaste ${recent.length})` : ''}</div>
+    <div><b>${recent.length ? r0(avgP)+' g' : '–'}</b>protein per dag, snitt</div>
+    <div style="grid-column:span 2"><b>${total}</b>loggade dagar totalt</div>`;
+  // most eaten, last 30 days
+  const agg = {};
+  for(let i=0;i<30;i++) (log[addDays(today,-i)]||[]).forEach(e => {
+    const a = agg[e.name] = agg[e.name] || { name:e.name, key:e.key, n:0, kcal:0 }; a.n++; a.kcal += e.kcal; });
+  const top = Object.values(agg).sort((a,b)=>b.n-a.n || b.kcal-a.kcal).slice(0,6);
+  $('topFoods').innerHTML = top.length ? top.map(a => `
+    <div class="item" ${foods[a.key] ? `data-open="${esc(a.key)}"` : ''}><div class="info"><div class="name">${esc(a.name)}</div>
+    <div class="meta">${a.n} ${a.n===1?'gång':'gånger'} · snitt ${r0(a.kcal/a.n)} kcal</div></div>
+    <div class="kcal" style="color:var(--muted)">${r0(a.kcal)} kcal</div></div>`).join('')
+    : '<div class="empty">Inget loggat än</div>';
+}
+$('dayLabel').onclick = openCal;
+$('calPrev').onclick = () => { calMonth.setMonth(calMonth.getMonth()-1); renderCal(); };
+$('calNext').onclick = () => { calMonth.setMonth(calMonth.getMonth()+1); renderCal(); };
+$('calGrid').onclick = e => { const b = e.target.closest('[data-day]'); if(!b) return;
+  day = new Date(b.dataset.day+'T12:00'); closeAll(); render(); };
+
+function renderFoodList(){
+  const q = $('foodSearch').value.trim().toLowerCase();
+  const list = Object.values(foods).filter(f => !q || (f.name+' '+(f.brand||'')).toLowerCase().includes(q))
+    .sort((a,b) => a.name.localeCompare(b.name, 'sv'));
+  $('foodList').innerHTML = list.length ? list.map(fd => `
+    <div class="item" data-open="${esc(fd.key)}"><div class="info"><div class="name">${esc(fd.name)}</div>
+    <div class="meta">${esc(fd.brand ? fd.brand+' · ' : '')}${r0(fd.kcal)} kcal/100 ${fd.unit||'g'}${fd.src==='ai' ? ' · AI' : ''}</div></div>
+    <div class="kcal" style="color:var(--accent)">+</div></div>`).join('') : '<div class="empty">Inga träffar</div>';
+}
+$('allFoodsBtn').onclick = () => { $('foodSearch').value=''; renderFoodList(); open('foodsSheet'); };
+$('foodSearch').oninput = renderFoodList;
+
+// ---------- history ----------
+let hTab = 'log', hPer = 'week', hRef = null, hSeq = 0;
+const srcOf = e => e.meal || /^ai:/.test(e.key) ? ['AI'] : /^\d{8,14}$/.test(e.key) ? ['Skannad'] : /^q:/.test(e.key) ? ['Snabb'] : ['Manuell'];
+function hRange(){
+  const r = new Date(hRef);
+  if(hPer === 'week'){ const s = new Date(r); s.setDate(r.getDate() - (r.getDay()+6)%7); const e = new Date(s); e.setDate(s.getDate()+6); return [dkey(s), dkey(e)]; }
+  return [dkey(new Date(r.getFullYear(), r.getMonth(), 1, 12)), dkey(new Date(r.getFullYear(), r.getMonth()+1, 0, 12))];
+}
+function hTitleText([a, b]){
+  const A = new Date(a+'T12:00'), B = new Date(b+'T12:00');
+  if(hPer === 'month') return A.toLocaleDateString('sv-SE', { month:'long', year:'numeric' }).replace(/^./, c=>c.toUpperCase());
+  const wk = (() => { const d = new Date(A); d.setDate(d.getDate()+3); const y = new Date(d.getFullYear(),0,4); return 1 + Math.round(((d - y)/864e5 - 3 + (y.getDay()+6)%7)/7); })();
+  return `Vecka ${wk} · ${A.getDate()} ${A.toLocaleDateString('sv-SE',{month:'short'})} – ${B.getDate()} ${B.toLocaleDateString('sv-SE',{month:'short'})}`;
+}
+const daysIn = ([a, b]) => { const out = []; for(let k = b; k >= a; k = addDays(k,-1)) out.push(k); return out; };   // newest first
+function openHist(){ hRef = new Date(day); renderHist(); open('histSheet'); }
+async function renderHist(){
+  const my = ++hSeq;                 // a newer render (fast tab switching) wins
+  const range = hRange(), today = todayKey();
+  document.querySelectorAll('#histTab button').forEach(b => b.classList.toggle('on', b.dataset.t === hTab));
+  document.querySelectorAll('#histPer button').forEach(b => b.classList.toggle('on', b.dataset.p === hPer));
+  $('hTitle').textContent = hTitleText(range);
+  $('hNext').disabled = range[1] >= today;
+  const days = daysIn(range).filter(k => k <= today);
+  if(hTab === 'log'){
+    const logged = days.filter(k => (log[k]||[]).length), all = logged.flatMap(k => log[k]);
+    const sum = f => all.reduce((a,e)=>a+(e[f]||0),0), n = logged.length || 1;
+    const count = t => all.filter(e => srcOf(e)[0] === t).length;
+    $('hStats').innerHTML = `
+      <div><b>${r0(sum('kcal'))}</b>kcal totalt</div>
+      <div><b>${logged.length ? r0(sum('kcal')/n) : '–'}</b>kcal per dag, snitt</div>
+      <div><b>${logged.length ? r0(sum('p')/n)+' g' : '–'}</b>protein per dag, snitt</div>
+      <div><b>${logged.length} / ${days.length}</b>dagar loggade</div>
+      <div style="grid-column:span 2"><b>${all.length} saker</b>${count('Skannad')} skannade · ${count('AI')} via AI-foto · ${count('Manuell')} manuella · ${count('Snabb')} snabba</div>`;
+    $('hBody').innerHTML = logged.length ? logged.map(k => {
+      const d = new Date(k+'T12:00'), kc = dayKcal(k);
+      return `<div class="dayhead"><span>${d.toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'short'}).replace(/^./, c=>c.toUpperCase())}</span><span style="color:${kc>goal*1.05?'var(--warn)':'var(--text)'}">${r0(kc)} kcal</span></div>
+        <div class="list">${log[k].map(e => { const [t] = srcOf(e); return `
+          <div class="item" ${foods[e.key] ? `data-open="${esc(e.key)}"` : ''} ${e.meal ? `data-meal="${e.meal}"` : ''}><div class="info"><div class="name">${esc(e.name)}</div>
+          <div class="meta"><span class="src">${t}</span>${e.amount ? `${r0(e.amount)} ${e.unit||'g'} · ` : ''}${e.time||''} · ${r0(e.p||0)} g protein</div></div>
+          <div class="kcal">${r0(e.kcal)}</div></div>`; }).join('')}</div>`;
+    }).join('') : '<div class="empty" style="margin-top:12px">Inget loggat den här perioden</div>';
+  } else {
+    let meals = [];
+    try{ meals = (await mealsDB.all()).filter(m => m.date >= range[0] && m.date <= range[1]).sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time)); }catch{}
+    if(my !== hSeq) return;
+    const sum = f => meals.reduce((a,m)=>a+(m[f]||0),0);
+    $('hStats').innerHTML = `
+      <div><b>${meals.length}</b>AI-måltider</div>
+      <div><b>${meals.length ? r0(sum('kcal')/meals.length) : '–'}</b>kcal per måltid, snitt</div>
+      <div><b>${r0(sum('kcal'))}</b>kcal totalt</div>
+      <div><b>${r0(sum('p'))} g</b>protein totalt</div>`;
+    $('hBody').innerHTML = meals.length ? `<div class="aicards">${meals.map(m => `
+      <button class="aicard" data-meal="${m.id}"><img src="${m.img}" alt=""><div><b>${r0(m.kcal)} kcal</b>
+      ${new Date(m.date+'T12:00').toLocaleDateString('sv-SE',{weekday:'short', day:'numeric', month:'short'})} · ${m.time}<br>
+      ${esc(m.items.map(i => i.name.split(',')[0]).join(', '))}</div></button>`).join('')}</div>`
+      : '<div class="empty" style="margin-top:12px">Inga AI-foton den här perioden</div>';
+  }
+}
+async function openMeal(id){
+  let m; try{ m = (await mealsDB.all()).find(x => x.id === id); }catch{}
+  if(!m){ toast('Fotot finns inte kvar'); return; }
+  $('mealBody').innerHTML = `<h3>${new Date(m.date+'T12:00').toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'long'}).replace(/^./, c=>c.toUpperCase())} · ${m.time}</h3>
+    <img class="aiimg" style="max-height:44vh" src="${m.img}">
+    <div class="result" style="margin:0 0 6px"><div class="big">${r0(m.kcal)}</div><div class="sub" style="justify-content:center">kcal${m.conf ? ` · säkerhet: ${esc(m.conf)}` : ''}</div>
+      <div class="key3"><div><b>${r1(m.p)} g</b>protein</div><div><b>${r1(m.c)} g</b>kolhydrat</div></div></div>
+    ${m.note ? `<div class="brand">AI:n: ${esc(m.note)}</div>` : ''}${m.hint ? `<div class="brand">Din rättning: ${esc(m.hint)}</div>` : ''}
+    <table class="n"><tr><td></td><td style="color:var(--text);font-weight:600">mängd</td><td style="color:var(--text);font-weight:600">kcal</td></tr>
+      ${m.items.map(i => `<tr><td>${esc(i.name)}</td><td>${r0(i.grams)} g</td><td>${r0(i.kcal)}</td></tr>`).join('')}</table>
+    <div class="btns"><button class="secondary" id="mealDel" style="color:var(--bad)">Ta bort fotot</button></div>
+    <div class="brand" style="text-align:center">Tar bara bort fotot ur historiken – det du loggade ligger kvar.</div>`;
+  open('mealSheet');
+  $('mealDel').onclick = async () => { if(!confirm('Ta bort fotot och uppskattningen?')) return;
+    await mealsDB.del(id).catch(()=>{}); toast('Fotot borttaget'); openHist(); };
+}
+$('histBtn').onclick = openHist;
+$('histTab').onclick = e => { const b = e.target.closest('[data-t]'); if(b){ hTab = b.dataset.t; renderHist(); } };
+$('histPer').onclick = e => { const b = e.target.closest('[data-p]'); if(b){ hPer = b.dataset.p; renderHist(); } };
+$('hPrev').onclick = () => { hPer==='week' ? hRef.setDate(hRef.getDate()-7) : hRef.setMonth(hRef.getMonth()-1, 1); renderHist(); };
+$('hNext').onclick = () => { hPer==='week' ? hRef.setDate(hRef.getDate()+7) : hRef.setMonth(hRef.getMonth()+1, 1); renderHist(); };
+$('hBody').onclick = e => { const m = e.target.closest('[data-meal]'); if(m && hTab==='ai'){ openMeal(m.dataset.meal); return; }
+  if(m && !e.target.closest('[data-open]')) openMeal(m.dataset.meal); };
 
 // ---------- sheets ----------
 let openSheet = null;
@@ -493,6 +775,7 @@ async function startScan(){
 
 async function scanLoop(){
   if(!scanning) return;
+  const loopStart = performance.now();
   const v = $('video');
   if(zx && !busy && v.readyState >= 2 && v.videoWidth){
     busy = true;
@@ -534,7 +817,8 @@ async function scanLoop(){
     }catch(e){ status('Fel vid läsning: ' + (e?.message || e)); }
     busy = false;
   }
-  requestAnimationFrame(scanLoop);
+  // ~15 checks per second is plenty for barcodes and spares the battery on a 120 Hz screen
+  setTimeout(() => requestAnimationFrame(scanLoop), Math.max(0, 66 - (performance.now() - loopStart)));
 }
 
 function stopScan(){
@@ -630,7 +914,7 @@ function showProduct(fd, fromScan=false){
       ${[['Energi','kcal',' kcal'],['Protein','p',' g'],['Kolhydrat','c',' g'],['&nbsp;&nbsp;varav socker','s',' g'],['Fett','f',' g'],['Salt','salt',' g']]
         .map(([l,k,s])=>`<tr class="${['kcal','p','c'].includes(k)?'key':''}"><td>${l}</td><td>${r1(fd[k])}${fd[k]==null?'':s}</td><td data-n="${k}" data-s="${s}"></td></tr>`).join('')}
     </table>
-    <div class="src">${fd.src==='off' && !fd.edited ? 'Från Open Food Facts – snabbkolla kcal, protein och kolhydrat mot förpackningen första gången.' : fd.edited ? 'Dina rättade värden.' : 'Egen produkt.'}</div>
+    <div class="src">${fd.src==='off' && !fd.edited ? 'Från Open Food Facts – snabbkolla kcal, protein och kolhydrat mot förpackningen första gången.' : fd.edited ? 'Dina rättade värden.' : fd.src==='ai' ? 'AI-uppskattning från foto.' : 'Egen produkt.'}</div>
     <div class="btns"><button class="secondary" id="pEdit">Redigera</button><button class="primary" id="pAdd">Lägg till</button></div>
     ${fromScan ? '<button class="linkbtn center" id="pRescan">Fel vara? Skanna igen</button>' : ''}
     ${fd.src!=='off' || fd.edited || foods[fd.key] ? '<div class="btns"><button class="secondary" id="pForget" style="color:var(--bad);font-weight:500">Glöm produkten</button></div>' : ''}`;
@@ -667,6 +951,158 @@ function addEntry(fd, amount){
   toast(`+${r0(fd.kcal*amount/100)} kcal`, ()=>{ log[k].pop(); if(!log[k].length) delete log[k]; save(); render(); });
 }
 
+// ---------- AI photo estimate ----------
+// Sends the photo straight from this phone to Anthropic's Claude API with your own key.
+const AI_MODEL = 'claude-sonnet-5-5';
+const AI_SYS = `You estimate the food in a photo for a personal calorie tracker.
+List each distinct food item you can see. Estimate the weight in grams of each item as served/cooked,
+using visual cues (a dinner plate is about 26 cm, cutlery, typical portions). For each item give kcal,
+protein, carbs and fat for that weight, including cooking fat or sauce you can reasonably infer.
+Item names in Swedish, short (e.g. "Kycklingfilé, stekt", "Kokt potatis", "Broccoli, kokt").
+Reply with ONLY this JSON, no other text:
+{"items":[{"name":"...","grams":0,"kcal":0,"protein":0,"carbs":0,"fat":0}],"confidence":"hög|medel|låg","note":"max one short Swedish sentence on what is uncertain"}
+If no food is visible: {"items":[],"confidence":"låg","note":"..."}`;
+let aiItems = [], aiImg = '', aiHint = '', aiConf = '', aiNote = '';
+
+// Saved AI meals live in IndexedDB: much more room than normal storage, and photos are big.
+const mealsDB = (() => {
+  let dbp = null;
+  const db = () => dbp = dbp || new Promise((res, rej) => {
+    const r = indexedDB.open('kalorier', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('aimeals', { keyPath:'id' });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  const run = (mode, fn) => db().then(d => new Promise((res, rej) => {
+    const t = d.transaction('aimeals', mode), req = fn(t.objectStore('aimeals'));
+    t.oncomplete = () => res(req && 'result' in req ? req.result : undefined); t.onerror = () => rej(t.error);
+  }));
+  return { put: m => run('readwrite', s => s.put(m)), del: id => run('readwrite', s => s.delete(id)), all: () => run('readonly', s => s.getAll()) };
+})();
+navigator.storage?.persist?.().catch(()=>{});      // ask iOS not to clear our storage when space runs low
+function thumb(dataUrl, max){                       // smaller copy of the photo for keeping (~40–80 kB)
+  return new Promise(res => { const img = new Image(); img.onload = () => {
+    const sc = Math.min(1, max/Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.72)); };
+    img.onerror = () => res(dataUrl); img.src = dataUrl; });
+}
+
+function aiSetupHTML(){
+  return `<h3>AI-foto</h3>
+    <div class="brand">Fota en tallrik så uppskattar AI:n vad som ligger på den, hur mycket, och kalorier, protein och kolhydrater.</div>
+    <div class="note" style="color:var(--muted)">Det kräver en egen nyckel från Anthropic (Claude). Ett foto kostar under 1 öre. Nyckeln sparas bara på den här telefonen.</div>
+    <ol style="color:var(--muted);font-size:14px;padding-left:20px;line-height:1.6">
+      <li>Gå till <b style="color:var(--text)">platform.claude.com</b> och skapa ett konto</li>
+      <li>Lägg in lite kredit under Billing (minst 5 $)</li>
+      <li>Skapa en nyckel under API Keys och klistra in den här</li></ol>
+    <div class="row"><input id="aiKeyInline" type="password" autocomplete="off" placeholder="sk-ant-…"><button class="primary" id="aiKeyInlineSave" style="flex:0 0 80px;border-radius:10px">Spara</button></div>`;
+}
+$('photoBtn').onclick = () => {
+  if(!aiKey){
+    $('aiBody').innerHTML = aiSetupHTML(); open('aiSheet');
+    $('aiKeyInlineSave').onclick = () => { const v = $('aiKeyInline').value.trim(); if(!v) return;
+      aiKey = v; S.set('kc_aikey', v); closeAll(); toast('Nyckel sparad – tryck på kameraknappen igen'); };
+    return;
+  }
+  $('photoInput').value = ''; $('photoInput').click();               // opens the iPhone camera
+};
+$('photoInput').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{ aiImg = await shrinkPhoto(f, 1024); }catch{ toast('Kunde inte läsa bilden'); return; }
+  aiHint = ''; analyse();
+};
+function shrinkPhoto(file, max){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const sc = Math.min(1, max/Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82)); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+async function analyse(){
+  open('aiSheet');
+  $('aiBody').innerHTML = `<h3>Analyserar…</h3><img class="aiimg" src="${aiImg}"><div class="spinner"></div>
+    <div class="brand" style="text-align:center">Brukar ta 5–15 sekunder</div>`;
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{
+      'content-type':'application/json', 'x-api-key':aiKey, 'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:AI_MODEL, max_tokens:1024, system:AI_SYS, messages:[{ role:'user', content:[
+        { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:aiImg.split(',')[1] } },
+        { type:'text', text: aiHint ? `Extra information från användaren: ${aiHint}` : 'Uppskatta maten på bilden.' } ] }] }) });
+    const j = await res.json().catch(() => ({}));
+    if(!res.ok){
+      const msg = j?.error?.message || res.statusText;
+      throw new Error(res.status===401 ? 'Nyckeln fungerar inte – kolla den under Mål.' : /credit|balance/i.test(msg) ? 'Krediten är slut – fyll på under Billing på platform.claude.com.' : msg);
+    }
+    const txt = (j.content||[]).map(c=>c.text||'').join('');
+    const out = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+    aiItems = (out.items||[]).filter(i => i.grams > 0).map(i => ({ name:String(i.name||'Okänt'), grams:+i.grams,
+      rk:(+i.kcal||0)/i.grams, rp:(+i.protein||0)/i.grams, rc:(+i.carbs||0)/i.grams, rf:(+i.fat||0)/i.grams }));
+    aiConf = out.confidence || ''; aiNote = out.note || '';
+    renderAI(aiConf, aiNote);
+  }catch(err){
+    $('aiBody').innerHTML = `<h3>Det gick inte</h3><img class="aiimg" src="${aiImg}"><div class="note">⚠ ${esc(err.message||err)}</div>
+      <div class="btns"><button class="secondary" id="aiRetry">Försök igen</button><button class="primary" id="aiNew">Nytt foto</button></div>`;
+    $('aiRetry').onclick = analyse; $('aiNew').onclick = () => $('photoBtn').click();
+  }
+}
+function renderAI(conf, note){
+  $('aiBody').innerHTML = `<h3>Uppskattning${conf ? `<span class="conf">säkerhet: ${esc(conf)}</span>` : ''}</h3>
+    <img class="aiimg" src="${aiImg}">
+    <div class="result" style="margin:0 0 6px"><div class="big" id="aiK">0</div><div class="sub" style="justify-content:center">kcal totalt</div>
+      <div class="key3"><div><b id="aiP"></b>protein</div><div><b id="aiC"></b>kolhydrat</div></div></div>
+    ${note ? `<div class="brand">${esc(note)}</div>` : ''}
+    <div id="aiRows">${aiItems.length ? '' : '<div class="empty">Ingen mat hittades på bilden</div>'}</div>
+    <label class="f">Rätta AI:n (valfritt)</label>
+    <div class="row"><input id="aiHintIn" placeholder="t.ex. stekt i smör, ca 200 g kyckling" value="${esc(aiHint)}"><button class="secondary" id="aiAgain" style="flex:0 0 96px;border-radius:10px">Igen</button></div>
+    <div class="note" style="color:var(--muted)">Ungefärligt – mängder från foto kan slå fel med 20–30 %. Justera grammen om du vet bättre.</div>
+    <div class="btns"><button class="secondary" id="aiNew">Nytt foto</button><button class="primary" id="aiAdd">Lägg till</button></div>`;
+  const rows = () => {
+    $('aiRows').innerHTML = aiItems.map((it,i) => `<div class="airow"><div class="info"><div>${esc(it.name)}</div>
+      <div class="meta">${r0(it.rk*it.grams)} kcal · ${r1(it.rp*it.grams)} g protein · ${r1(it.rc*it.grams)} g kolh.</div></div>
+      <input inputmode="decimal" data-g="${i}" value="${r0(it.grams)}"><span class="meta">g</span>
+      <button class="del" data-rm="${i}" aria-label="Ta bort">×</button></div>`).join('') || '<div class="empty">Inget kvar</div>';
+    totals();
+  };
+  const totals = () => {
+    $('aiK').textContent = r0(aiItems.reduce((a,i)=>a+i.rk*i.grams,0));
+    $('aiP').textContent = r1(aiItems.reduce((a,i)=>a+i.rp*i.grams,0))+' g';
+    $('aiC').textContent = r1(aiItems.reduce((a,i)=>a+i.rc*i.grams,0))+' g';
+  };
+  rows();
+  $('aiRows').oninput = e => { const i = e.target.dataset.g; if(i==null) return;
+    aiItems[i].grams = num(e.target.value) || 0;
+    e.target.closest('.airow').querySelector('.meta').textContent =
+      `${r0(aiItems[i].rk*aiItems[i].grams)} kcal · ${r1(aiItems[i].rp*aiItems[i].grams)} g protein · ${r1(aiItems[i].rc*aiItems[i].grams)} g kolh.`;
+    totals(); };
+  $('aiRows').onclick = e => { const b = e.target.closest('[data-rm]'); if(b){ aiItems.splice(+b.dataset.rm,1); rows(); } };
+  $('aiAgain').onclick = () => { aiHint = $('aiHintIn').value.trim(); analyse(); };
+  $('aiNew').onclick = () => $('photoBtn').click();
+  $('aiAdd').onclick = () => {
+    const items = aiItems.filter(i => i.grams > 0); if(!items.length) return;
+    const k = dkey(day), now = new Date(), t = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    log[k] = log[k] || [];
+    items.forEach(i => {
+      const key = 'ai:' + i.name.toLowerCase().replace(/[^a-zåäö0-9]+/g,'-');
+      log[k].push({ key, name:i.name, amount:i.grams, unit:'g', kcal:i.rk*i.grams, p:i.rp*i.grams, c:i.rc*i.grams, f:i.rf*i.grams, time:t });
+      foods[key] = { key, src:'ai', name:i.name, kcal:i.rk*100, p:i.rp*100, c:i.rc*100, f:i.rf*100, unit:'g', pack:i.grams, used:Date.now() };
+    });
+    const total = items.reduce((a,i)=>a+i.rk*i.grams,0);
+    const mealId = Date.now().toString(36);
+    log[k].slice(-items.length).forEach(e => e.meal = mealId);          // link the entries to the saved photo
+    save(); closeAll(); render();
+    // keep the photo + estimate for the history tab
+    thumb(aiImg, 720).then(img => mealsDB.put({ id:mealId, date:k, time:t, img, conf:aiConf, note:aiNote, hint:aiHint,
+      kcal:total, p:items.reduce((a,i)=>a+i.rp*i.grams,0), c:items.reduce((a,i)=>a+i.rc*i.grams,0), f:items.reduce((a,i)=>a+i.rf*i.grams,0),
+      items: items.map(i => ({ name:i.name, grams:i.grams, kcal:i.rk*i.grams, p:i.rp*i.grams, c:i.rc*i.grams, f:i.rf*i.grams })) }))
+      .catch(() => toast('Kunde inte spara fotot i historiken'));
+    toast(`+${r0(total)} kcal`, () => { log[k].splice(-items.length); if(!log[k].length) delete log[k]; save(); render(); mealsDB.del(mealId).catch(()=>{}); });
+  };
+}
+
 // ---------- edit / manual ----------
 let editing = null, editIsNew = false;
 $('eUnit').onclick = () => { $('eUnit').textContent = $('eUnit').textContent==='g' ? 'ml' : 'g'; };
@@ -695,19 +1131,25 @@ $('editSave').onclick = () => {
 $('manualBtn').onclick = openQuick;
 
 // ---------- goal + backup ----------
+const aiKeyStatus = () => { $('aiKeyStatus').textContent = aiKey ? `Nyckel sparad (…${aiKey.slice(-4)}) – kameraknappen är redo.` : 'Ingen nyckel än. Tryck på kameraknappen på startsidan för instruktioner.'; };
+$('aiKeySave').onclick = () => { const v = $('aiKeyInput').value.trim(); if(!v) return; aiKey = v; S.set('kc_aikey', v); $('aiKeyInput').value=''; aiKeyStatus(); toast('Nyckel sparad'); };
+$('aiKeyRemove').onclick = () => { aiKey = ''; S.set('kc_aikey', ''); aiKeyStatus(); toast('Nyckel borttagen'); };
 $('settingsBtn').onclick = () => {
+  aiKeyStatus();
   $('diag').textContent = `skärm ${screen.height} · ritat ${Math.round(document.body.getBoundingClientRect().height)} · popup ${Math.round($('probe').getBoundingClientRect().height)} · justering ${getComputedStyle(document.documentElement).getPropertyValue('--gap').trim()}`; $('goalInput').value = goal; $('pgoalInput').value = pgoal || ''; open('goalSheet'); };
 $('goalCancel').onclick = () => closeAll();
 $('goalSave').onclick = () => { const g = num($('goalInput').value); if(g>0) goal=r0(g); pgoal = r0(num($('pgoalInput').value)||0); save(); render(); closeAll(); };
-$('exportBtn').onclick = () => {
-  const blob = new Blob([JSON.stringify({log,foods,goal,pgoal,weights},null,1)],{type:'application/json'});
+$('exportBtn').onclick = async () => {
+  let aimeals = []; try{ aimeals = await mealsDB.all(); }catch{}
+  const blob = new Blob([JSON.stringify({log,foods,goal,pgoal,weights,water,aimeals})],{type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `kalorier-backup-${todayKey()}.json`; a.click();
 };
 $('importBtn').onclick = () => $('importFile').click();
 $('importFile').onchange = async e => {
   try{ const d = JSON.parse(await e.target.files[0].text());
-    if(d.log) log = d.log; if(d.foods) foods = d.foods; if(d.goal) goal = d.goal; if(d.pgoal!=null) pgoal = d.pgoal; if(d.weights) weights = d.weights;
+    if(d.log) log = d.log; if(d.foods) foods = d.foods; if(d.goal) goal = d.goal; if(d.pgoal!=null) pgoal = d.pgoal; if(d.weights) weights = d.weights; if(d.water) water = d.water;
+    if(Array.isArray(d.aimeals)) for(const m of d.aimeals) await mealsDB.put(m).catch(()=>{});
     save(); render(); closeAll(); toast('Importerat'); }catch{ toast('Ogiltig fil'); }
 };
 
