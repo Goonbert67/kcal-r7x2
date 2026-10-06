@@ -220,6 +220,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 5</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -649,7 +650,12 @@ $('importFile').onchange = async e => {
 };
 
 render();
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js', { updateViaCache:'none' }).then(r => r.update()).catch(()=>{});
+  // when a new version takes over, reload once so you're never stuck on the old one
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if(!reloaded && document.visibilityState==='visible'){ reloaded = true; location.reload(); } });
+}
 </script>
 </body>
 </html>
