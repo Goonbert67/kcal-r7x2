@@ -21,8 +21,8 @@
 html,body{margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;touch-action:manipulation;overscroll-behavior-y:none;
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 html{height:100%}
-:root{--gap:0px}   /* filled in by fixGap(): how far short of the real bottom iOS ends pop-ups */
-body{height:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+:root{--gap:0px;--appH:100dvh}   /* set by fixGap(): iOS sometimes gives web apps less than the full screen */
+body{position:fixed;top:0;left:0;width:100%;height:100dvh;height:var(--appH);display:flex;flex-direction:column;overflow:hidden}
 #probe{position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none}
 #main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:calc(env(safe-area-inset-top) + 12px) 16px 24px}
@@ -236,7 +236,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 9<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 10<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -696,7 +696,7 @@ $('manualBtn').onclick = openQuick;
 
 // ---------- goal + backup ----------
 $('settingsBtn').onclick = () => {
-  $('diag').textContent = `skärm ${screen.height} · app ${Math.round(document.body.getBoundingClientRect().height)} · popup ${Math.round($('probe').getBoundingClientRect().height)} · justering ${getComputedStyle(document.documentElement).getPropertyValue('--gap').trim()}`; $('goalInput').value = goal; $('pgoalInput').value = pgoal || ''; open('goalSheet'); };
+  $('diag').textContent = `skärm ${screen.height} · ios ${Math.round($('probe').getBoundingClientRect().height)} · app ${Math.round(document.body.getBoundingClientRect().height)} · justering ${getComputedStyle(document.documentElement).getPropertyValue('--gap').trim()}`; $('goalInput').value = goal; $('pgoalInput').value = pgoal || ''; open('goalSheet'); };
 $('goalCancel').onclick = () => closeAll();
 $('goalSave').onclick = () => { const g = num($('goalInput').value); if(g>0) goal=r0(g); pgoal = r0(num($('pgoalInput').value)||0); save(); render(); closeAll(); };
 $('exportBtn').onclick = () => {
@@ -711,16 +711,26 @@ $('importFile').onchange = async e => {
     save(); render(); closeAll(); toast('Importerat'); }catch{ toast('Ogiltig fil'); }
 };
 
-// iOS home-screen web apps can end fixed-position pop-ups short of the real screen bottom
-// (normal content is fine). Measure the difference directly and shift only the pop-ups.
+// iOS home-screen web apps sometimes get a layout area shorter than the screen (seen: 812 or 827
+// on an 874 screen), for the whole app or just for pop-ups. In home-screen mode, portrait, with no
+// keyboard up, size everything to the real screen height instead.
 function fixGap(){
-  const a = document.activeElement;
-  if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;          // keyboard open: leave it
-  const real  = document.body.getBoundingClientRect().height;        // 100dvh = where the app really ends
-  const fixed = $('probe').getBoundingClientRect().height;          // where pop-ups end
-  const g = Math.round(real - fixed);
-  document.documentElement.style.setProperty('--gap', (g > 0 && g <= 90 ? g : 0) + 'px');
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  const a = document.activeElement, typing = a && /INPUT|TEXTAREA|SELECT/.test(a.tagName);
+  const portrait = matchMedia('(orientation: portrait)').matches;
+  const root = document.documentElement.style;
+  let appH = '', gap = 0;
+  if(standalone && portrait && !typing){
+    const full = Math.max(screen.width, screen.height);
+    const fixedH = $('probe').getBoundingClientRect().height;      // where iOS thinks the screen ends
+    const short = Math.round(full - fixedH);
+    if(short > 0 && short <= 120){ appH = full + 'px'; gap = short; }
+  }
+  if(appH) root.setProperty('--appH', appH); else root.removeProperty('--appH');
+  root.setProperty('--gap', gap + 'px');
 }
+document.addEventListener('focusin', e => { if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){   // keyboard: let iOS size things
+  document.documentElement.style.removeProperty('--appH'); document.documentElement.style.setProperty('--gap','0px'); } });
 fixGap(); addEventListener('resize', fixGap); addEventListener('orientationchange', () => setTimeout(fixGap, 300));
 document.addEventListener('focusout', () => setTimeout(fixGap, 350));
 
