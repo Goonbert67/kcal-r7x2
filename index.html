@@ -12,7 +12,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{
   --bg:#000;--card:#141416;--card2:#202024;--line:#2a2a2f;
@@ -92,11 +91,20 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 .src{font-size:12px;color:var(--muted);margin-top:8px}
 .btns{display:flex;gap:10px;margin-top:14px}
 .btns button{flex:1;padding:14px;border-radius:12px;font-weight:600}
-#reader{width:100%;border-radius:14px;overflow:hidden;background:#000;min-height:240px}
-#reader video{object-fit:cover}
+.x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--card2);color:var(--muted);font-size:22px;line-height:36px;padding:0}
+.sheet h3{padding-right:44px}
+.cam{position:relative;width:100%;aspect-ratio:1/1;max-height:52vh;margin:0 auto;background:#0a0a0a;border-radius:18px;overflow:hidden}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.frame{position:absolute;inset:14%;border:3px solid rgba(255,255,255,.9);border-radius:20px;box-shadow:0 0 0 999px rgba(0,0,0,.4);transition:border-color .15s}
+.frame.hit{border-color:var(--accent)}
+.camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted);font-size:14px}
+.torch{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);font-size:20px}
+.torch.on{background:var(--accent);color:#06210f}
+.linkbtn.center{text-align:center}
 .spin{padding:30px;text-align:center;color:var(--muted)}
-.toast{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);
-  background:var(--card2);padding:10px 16px;border-radius:12px;z-index:20;font-size:14px;display:none}
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 92px);left:50%;transform:translateX(-50%);align-items:center;gap:14px;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
+  background:var(--card2);padding:10px 16px;border-radius:12px;z-index:20;font-size:15px;display:none}
+.toast button{background:none;color:var(--accent);font-weight:700;padding:2px 0}
 </style>
 </head>
 <body>
@@ -142,19 +150,21 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 
 <!-- Scanner -->
 <div class="sheet" id="scanSheet">
-  <h3>Skanna streckkod</h3>
-  <div class="brand">Rikta kameran mot streckkoden</div>
-  <div id="reader"></div>
+  <button class="x" data-close aria-label="Stäng">×</button>
+  <h3>Skanna</h3>
+  <div class="brand">Streckkoden i rutan – liggande eller stående spelar ingen roll</div>
+  <div class="cam"><video id="video" playsinline muted autoplay></video><div class="frame" id="frame"></div>
+    <div class="camMsg" id="camMsg">Startar kameran…</div><button class="torch" id="torchBtn" hidden aria-label="Lampa">⚡</button></div>
   <label class="f">Eller skriv in koden</label>
   <div class="row"><input id="codeInput" inputmode="numeric" placeholder="t.ex. 4335619347960"><button class="primary" id="codeGo" style="flex:0 0 80px;border-radius:10px">Sök</button></div>
-  <div class="btns"><button class="secondary" id="scanClose">Stäng</button></div>
 </div>
 
 <!-- Product -->
-<div class="sheet" id="prodSheet"><div id="prodBody"></div></div>
+<div class="sheet" id="prodSheet"><button class="x" data-close aria-label="Stäng">×</button><div id="prodBody"></div></div>
 
 <!-- Edit / manual -->
 <div class="sheet" id="editSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
   <h3 id="editTitle">Redigera</h3>
   <div class="brand" id="editSub">Värden per 100 g / 100 ml</div>
   <label class="f">Namn</label><input id="eName">
@@ -176,6 +186,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 
 <!-- Quick add -->
 <div class="sheet" id="quickSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
   <h3>Snabbregistrering</h3>
   <div class="brand">För restaurangmat eller annat du inte kan skanna. Bara kcal krävs.</div>
   <div class="row">
@@ -190,6 +201,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 
 <!-- Weight -->
 <div class="sheet" id="weightSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
   <h3>Vikt</h3>
   <div class="brand" id="wDayTxt"></div>
   <div class="row"><input id="wInput" inputmode="decimal" placeholder="kg"><button class="primary" id="wSave" style="flex:0 0 90px;border-radius:10px">Spara</button></div>
@@ -200,6 +212,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 
 <!-- Goal -->
 <div class="sheet" id="goalSheet">
+  <button class="x" data-close aria-label="Stäng">×</button>
   <h3>Dagligt mål</h3>
   <label class="f">kcal per dag</label><input id="goalInput" inputmode="numeric">
   <label class="f">Proteinmål, gram per dag (tomt = av)</label><input id="pgoalInput" inputmode="numeric">
@@ -232,7 +245,12 @@ const num = v => { if(v===''||v==null) return null; const n = parseFloat(String(
 const r0 = n => Math.round(n);
 const r1 = n => n==null ? '–' : (n>0 && n<1 ? Math.round(n*100)/100 : Math.round(n*10)/10).toString().replace('.',',');
 const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function toast(t){ const el=$('toast'); el.textContent=t; el.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none',1800); }
+function toast(t, undo){
+  const el=$('toast'); el.innerHTML=''; el.append(document.createTextNode(t));
+  if(undo){ const b=document.createElement('button'); b.textContent='Ångra';
+    b.onclick=()=>{ undo(); el.style.display='none'; }; el.append(b); }
+  el.style.display='flex'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none', undo?5000:1800);
+}
 
 let day = new Date(); day.setHours(12,0,0,0);
 const todayKey = () => dkey(new Date());
@@ -284,7 +302,9 @@ function render(){
 
 document.addEventListener('click', e => {
   const del = e.target.closest('[data-del]');
-  if(del){ const k=dkey(day); log[k].splice(+del.dataset.del,1); if(!log[k].length) delete log[k]; save(); render(); return; }
+  if(del){ const k=dkey(day), i=+del.dataset.del, [gone]=log[k].splice(i,1); if(!log[k].length) delete log[k]; save(); render();
+    toast(`Tog bort ${gone.name}`, ()=>{ (log[k]=log[k]||[]).splice(i,0,gone); save(); render(); }); return; }
+  if(e.target.closest('[data-close]')){ closeAll(); return; }
   const op = e.target.closest('[data-open]');
   if(op && foods[op.dataset.open]) showProduct(foods[op.dataset.open]);
 });
@@ -339,7 +359,8 @@ $('wClose').onclick = () => closeAll();
 $('wSave').onclick = () => {
   const v = num($('wInput').value);
   if(!v || v<20 || v>400){ toast('Ange vikt i kg'); return; }
-  weights[dkey(day)] = Math.round(v*10)/10; save(); render(); closeAll(); toast('Vikt sparad');
+  const wk=dkey(day), prev=weights[wk]; weights[wk] = Math.round(v*10)/10; save(); render(); closeAll();
+  toast('Vikt sparad', ()=>{ if(prev) weights[wk]=prev; else delete weights[wk]; save(); render(); });
 };
 $('wInput').onkeydown = e => { if(e.key==='Enter') $('wSave').click(); };
 document.addEventListener('click', e => { const b = e.target.closest('[data-wdel]');
@@ -355,7 +376,8 @@ $('qAdd').onclick = () => {
   (log[k] = log[k] || []).push({ key:'q:'+Date.now().toString(36), name: $('qName').value.trim() || 'Snabbregistrering',
     amount:null, kcal, p:num($('qP').value)||0, c:num($('qC').value)||0, f:0,
     time:`${pad(now.getHours())}:${pad(now.getMinutes())}` });
-  save(); closeAll(); render(); toast(`+${r0(kcal)} kcal`);
+  save(); closeAll(); render();
+  toast(`+${r0(kcal)} kcal`, ()=>{ log[k].pop(); if(!log[k].length) delete log[k]; save(); render(); });
 };
 $('qKcal').onkeydown = e => { if(e.key==='Enter') $('qAdd').click(); };
 $('qProduct').onclick = () => openEdit({ key:'m:'+Date.now().toString(36), src:'me', name:$('qName').value.trim(), kcal:null, unit:'g' }, true);
@@ -368,38 +390,121 @@ function closeAll(stop=true){ document.querySelectorAll('.sheet.open').forEach(s
 $('overlay').onclick = () => closeAll();
 
 // ---------- scanner ----------
-let scanner = null, scanning = false;
+// ZXing-C++ (WebAssembly) via the BarcodeDetector ponyfill: reads EAN/UPC at any rotation.
+const BD_URL = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/dist/es/ponyfill.js';
+let detector = null, detLoading = null;
+function loadDetector(){
+  if(detector) return Promise.resolve(detector);
+  return detLoading = detLoading || import(BD_URL).then(async m => {
+    detector = new m.BarcodeDetector({ formats:['ean_13','ean_8','upc_a','upc_e'] });
+    const warm = document.createElement('canvas'); warm.width = warm.height = 32;
+    await detector.detect(warm).catch(()=>{});            // pulls in + compiles the wasm now, not on first scan
+    return detector;
+  }).catch(e => { detLoading = null; throw e; });
+}
+// GTIN check digit (EAN-8, UPC-A, EAN-13): rejects most misreads outright
+function gtinOK(code){
+  if(!/^\d{8}$|^\d{12,13}$/.test(code)) return false;
+  let sum = 0; const d = code.split('').map(Number), chk = d.pop();
+  d.reverse().forEach((n,i) => sum += n * (i%2===0 ? 3 : 1));
+  return (10 - sum%10) % 10 === chk;
+}
+let stream = null, scanning = false, busy = false, hits = {}, torchOn = false;
+const ANGLES = [0, 45, 0, 22.5, 0, 67.5]; let angIdx = 0;
+const cropCanvas = document.createElement('canvas'), cropCtx = cropCanvas.getContext('2d', { willReadFrequently:true });
+
 async function startScan(){
-  open('scanSheet'); $('codeInput').value='';
-  if(!window.Html5Qrcode){ $('reader').innerHTML='<div class="spin">Skannern kunde inte laddas (offline?). Skriv in koden.</div>'; return; }
+  open('scanSheet'); $('codeInput').value=''; $('frame').classList.remove('hit');
+  $('camMsg').textContent = 'Startar kameran…'; $('camMsg').style.display = 'flex'; $('torchBtn').hidden = true;
+  hits = {}; scanning = true;
   try{
-    const F = Html5QrcodeSupportedFormats;
-    scanner = scanner || new Html5Qrcode('reader', {
-      formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E],
-      experimentalFeatures:{ useBarCodeDetectorIfSupported:true }, verbose:false });
-    await scanner.start({ facingMode:'environment' },
-      { fps:12, qrbox:(w,h)=>({ width:Math.floor(w*0.85), height:Math.floor(Math.min(h,w)*0.45) }) },
-      code => { if(!scanning) return; navigator.vibrate?.(60); stopScan(); lookup(code); }, ()=>{});
-    scanning = true;
+    const det = loadDetector();
+    stream = await navigator.mediaDevices.getUserMedia({ audio:false, video:{
+      facingMode:{ ideal:'environment' }, width:{ ideal:1920 }, height:{ ideal:1080 } } });
+    if(!scanning){ stopScan(); return; }                   // closed while waiting for permission
+    const v = $('video'); v.srcObject = stream; await v.play().catch(()=>{});
+    const track = stream.getVideoTracks()[0], caps = track.getCapabilities?.() || {};
+    const adv = {};
+    if(caps.focusMode?.includes('continuous')) adv.focusMode = 'continuous';
+    // a little zoom lets you hold the phone further back, where the camera can actually focus
+    if(caps.zoom) adv.zoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, 1.8));
+    if(Object.keys(adv).length) track.applyConstraints({ advanced:[adv] }).catch(()=>{});
+    if(caps.torch){ $('torchBtn').hidden = false; $('torchBtn').classList.toggle('on', torchOn=false); }
+    await det;
+    $('camMsg').style.display = 'none';
+    requestAnimationFrame(scanLoop);
   }catch(err){
-    $('reader').innerHTML = `<div class="spin">Kunde inte starta kameran.<br><small>${esc(err?.message||err)}</small><br><br>Tillåt kameraåtkomst, eller skriv in koden nedan.</div>`;
+    const denied = /NotAllowed|Permission/i.test(err?.name+err?.message);
+    $('camMsg').innerHTML = denied
+      ? 'Kameran är blockerad.<br><br>Tillåt kamera för sidan i Inställningar → Appar → Safari, eller skriv in koden nedan.'
+      : `Kunde inte starta skannern.<br><small>${esc(err?.message||err)}</small><br><br>Skriv in koden nedan.`;
+    $('camMsg').style.display = 'flex';
   }
 }
-async function stopScan(){ if(scanner && scanning){ scanning=false; try{ await scanner.stop(); }catch{} } }
+
+async function scanLoop(){
+  if(!scanning) return;
+  const v = $('video');
+  if(!busy && v.readyState >= 2 && v.videoWidth){
+    busy = true;
+    try{
+      // the visible square (object-fit:cover) — scan a bit more than the frame for tolerance
+      const vw = v.videoWidth, vh = v.videoHeight, side = Math.min(vw, vh);
+      const reg = side * 0.86, sx = (vw-reg)/2, sy = (vh-reg)/2, out = Math.min(reg, 900);
+      if(cropCanvas.width !== out) cropCanvas.width = cropCanvas.height = out;
+      // straight frames catch horizontal + vertical; every other frame is tilted to catch diagonal codes
+      const ang = ANGLES[angIdx++ % ANGLES.length];
+      if(ang){
+        cropCtx.fillStyle = '#808080'; cropCtx.fillRect(0, 0, out, out);
+        cropCtx.save(); cropCtx.translate(out/2, out/2); cropCtx.rotate(ang * Math.PI/180);
+        cropCtx.drawImage(v, sx, sy, reg, reg, -out/2, -out/2, out, out); cropCtx.restore();
+      } else cropCtx.drawImage(v, sx, sy, reg, reg, 0, 0, out, out);
+      const res = await detector.detect(cropCanvas);
+      const now = performance.now();
+      for(const k in hits) if(now - hits[k].t > 1500) delete hits[k];
+      for(const r of res){
+        const code = String(r.rawValue||'').replace(/\D/g,'');
+        const ok = r.format==='upc_e' ? code.length===8 : gtinOK(code);
+        if(!ok) continue;
+        const h = hits[code] = { n:(hits[code]?.n||0)+1, t: hits[code]?.t || now };
+        if(h.n >= (r.format==='upc_e' ? 3 : 2)){          // same code twice in a row = trustworthy
+          $('frame').classList.add('hit'); navigator.vibrate?.(40);
+          scanning = false; stopScan(); setTimeout(()=>lookup(code, true), 120);
+          busy = false; return;
+        }
+      }
+    }catch{}
+    busy = false;
+  }
+  requestAnimationFrame(scanLoop);
+}
+
+function stopScan(){
+  scanning = false;
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  const v = $('video'); if(v) v.srcObject = null;
+}
+$('torchBtn').onclick = () => {
+  const t = stream?.getVideoTracks()[0]; if(!t) return;
+  torchOn = !torchOn; t.applyConstraints({ advanced:[{ torch:torchOn }] }).catch(()=>{});
+  $('torchBtn').classList.toggle('on', torchOn);
+};
+// warm the decoder up in the background so the first scan is instant
+setTimeout(() => loadDetector().catch(()=>{}), 800);
 $('scanBtn').onclick = startScan;
-$('scanClose').onclick = () => closeAll();
 $('codeGo').onclick = () => { const c=$('codeInput').value.replace(/\D/g,''); if(c){ stopScan(); lookup(c); } };
 $('codeInput').onkeydown = e => { if(e.key==='Enter') $('codeGo').click(); };
 
 // ---------- Open Food Facts ----------
-async function lookup(code){
-  if(foods[code]){ showProduct(foods[code]); return; }   // saved/corrected version wins
+async function lookup(code, fromScan=false){
+  if(foods[code]){ showProduct(foods[code], fromScan); return; }
+  if(code.length===12 && foods['0'+code]){ showProduct(foods['0'+code], fromScan); return; }   // saved/corrected version wins
   open('prodSheet');
   $('prodBody').innerHTML = `<div class="spin">Söker ${esc(code)}…</div>`;
   try{
-    const url = `https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity`;
-    const res = await fetch(url);
-    const j = await res.json();
+    const get = async c => (await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity`)).json();
+    let j = await get(code);
+    if((j.status !== 1 || !j.product) && code.length===12) j = await get('0'+code);   // UPC-A stored as EAN-13
     if(j.status !== 1 || !j.product) throw 'notfound';
     const pr = j.product, n = pr.nutriments || {};
     let kcal = num(n['energy-kcal_100g']);
@@ -416,13 +521,14 @@ async function lookup(code){
       s: num(n.sugars_100g), salt: num(n.salt_100g),
       pack: num(pr.product_quantity) || num(pr.serving_quantity) || null, unit
     };
-    showProduct(fd, true);
+    showProduct(fd, fromScan);
   }catch(e){
     $('prodBody').innerHTML = `
       <h3>Hittades inte</h3>
       <div class="brand">${esc(code)} finns inte i Open Food Facts${e==='notfound'?'':' (eller ingen anslutning)'}.</div>
-      <div class="btns"><button class="secondary" onclick="closeAll()">Stäng</button>
+      <div class="btns"><button class="secondary" id="rescan">Skanna igen</button>
       <button class="primary" id="addMissing">Lägg till själv</button></div>`;
+    $('rescan').onclick = startScan;
     $('addMissing').onclick = () => openEdit({ key:code, code, src:'me', name:'', kcal:null, unit:'g' }, true);
   }
 }
@@ -445,7 +551,7 @@ function checkFood(fd){
 
 // ---------- product view ----------
 let cur = null, amt = 100;
-function showProduct(fd, fresh=false){
+function showProduct(fd, fromScan=false){
   cur = fd; amt = fd.pack || 100;
   open('prodSheet');
   const u = fd.unit || 'g';
@@ -466,6 +572,7 @@ function showProduct(fd, fresh=false){
     </table>
     <div class="src">${fd.src==='off' && !fd.edited ? 'Från Open Food Facts – snabbkolla kcal, protein och kolhydrat mot förpackningen första gången.' : fd.edited ? 'Dina rättade värden.' : 'Egen produkt.'}</div>
     <div class="btns"><button class="secondary" id="pEdit">Redigera</button><button class="primary" id="pAdd">Lägg till</button></div>
+    ${fromScan ? '<button class="linkbtn center" id="pRescan">Fel vara? Skanna igen</button>' : ''}
     ${fd.src!=='off' || fd.edited || foods[fd.key] ? '<div class="btns"><button class="secondary" id="pForget" style="color:var(--bad);font-weight:500">Glöm produkten</button></div>' : ''}`;
   const upd = () => {
     $('pKcal').textContent = r0(fd.kcal*amt/100);
@@ -481,6 +588,7 @@ function showProduct(fd, fresh=false){
   $('amtInput').oninput = e => { amt = num(e.target.value) || 0; upd(); };
   document.querySelectorAll('[data-amt]').forEach(b => b.onclick = () => { amt=+b.dataset.amt; $('amtInput').value=r0(amt); upd(); });
   $('pEdit').onclick = () => openEdit(fd);
+  if($('pRescan')) $('pRescan').onclick = startScan;
   $('pAdd').onclick = () => addEntry(fd, amt);
   if($('pForget')) $('pForget').onclick = () => { if(confirm('Ta bort sparad produkt?')){ delete foods[fd.key]; save(); closeAll(); render(); } };
 }
@@ -495,7 +603,8 @@ function addEntry(fd, amount){
     time: `${pad(now.getHours())}:${pad(now.getMinutes())}`
   });
   foods[fd.key] = { ...fd, missingKcal: fd.kcal==null || fd.missingKcal && !fd.edited, used: Date.now() };
-  save(); closeAll(); render(); toast(`+${r0(fd.kcal*amount/100)} kcal`);
+  save(); closeAll(); render();
+  toast(`+${r0(fd.kcal*amount/100)} kcal`, ()=>{ log[k].pop(); if(!log[k].length) delete log[k]; save(); render(); });
 }
 
 // ---------- edit / manual ----------
