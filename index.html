@@ -81,7 +81,7 @@ input:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .pnav button{background:var(--card2);width:36px;height:36px;border-radius:50%;font-size:18px}
 .pnav button:disabled{opacity:.3}
 .dayhead{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:16px 4px 6px}
-.src{font-size:11px;border-radius:6px;padding:1px 6px;background:var(--card2);color:var(--muted);margin-right:4px}
+.srctag{font-size:11px;border-radius:6px;padding:1px 6px;background:var(--card2);color:var(--muted);margin-right:4px}
 .aicards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .aicard{background:var(--card2);border-radius:14px;overflow:hidden;text-align:left;padding:0}
 .aicard img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
@@ -259,6 +259,10 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
     <div><label class="f">Varav socker</label><input id="eS" inputmode="decimal"></div>
     <div><label class="f">Salt</label><input id="eSalt" inputmode="decimal"></div>
   </div>
+  <div class="row">
+    <div><label class="f">Portion heter</label><input id="eServName" placeholder="t.ex. skiva, portion" autocomplete="off"></div>
+    <div><label class="f">En portion väger</label><input id="eServ" inputmode="decimal" placeholder="g / ml"></div>
+  </div>
   <div class="btns"><button class="secondary" id="editCancel">Avbryt</button><button class="primary" id="editSave">Spara</button></div>
 </div>
 
@@ -302,7 +306,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 18<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 19<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <!-- Calendar -->
@@ -405,7 +409,7 @@ function render(){
     <div class="item">
       <div class="info" data-open="${esc(e.key)}">
         <div class="name">${esc(e.name)}</div>
-        <div class="meta">${e.amount ? `${r0(e.amount)} ${e.unit||'g'} · ` : ''}${e.time||''}</div>
+        <div class="meta">${e.portions && Number.isInteger(e.portions*2) ? `${r1(e.portions)} × ${e.servName||'portion'} · ` : ''}${e.amount ? `${r0(e.amount)} ${e.unit||'g'} · ` : ''}${e.time||''}</div>
       </div>
       <div class="kcal">${r0(e.kcal)} kcal</div>
       <button class="del" data-del="${i}" aria-label="Ta bort">×</button>
@@ -420,7 +424,7 @@ function render(){
   $('recent').innerHTML = recent.map(fd => `
     <div class="item" data-open="${esc(fd.key)}">
       <div class="info"><div class="name">${esc(fd.name)}</div>
-      <div class="meta">${r0(fd.kcal)} kcal/100${fd.pack ? ` · ${r0(fd.pack)} ${fd.unit} = ${r0(fd.kcal*fd.pack/100)} kcal` : ''}</div></div>
+      <div class="meta">${r0(fd.kcal)} kcal/100${fd.serv ? ` · 1 ${esc(fd.servName||'portion')} = ${r0(fd.kcal*fd.serv/100)} kcal` : fd.pack ? ` · ${r0(fd.pack)} ${fd.unit} = ${r0(fd.kcal*fd.pack/100)} kcal` : ''}</div></div>
       <div class="kcal" style="color:var(--accent)">+</div>
     </div>`).join('');
 }
@@ -642,7 +646,7 @@ async function renderHist(){
       return `<div class="dayhead"><span>${d.toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'short'}).replace(/^./, c=>c.toUpperCase())}</span><span style="color:${kc>goal*1.05?'var(--warn)':'var(--text)'}">${r0(kc)} kcal</span></div>
         <div class="list">${log[k].map(e => { const [t] = srcOf(e); return `
           <div class="item" ${foods[e.key] ? `data-open="${esc(e.key)}"` : ''} ${e.meal ? `data-meal="${e.meal}"` : ''}><div class="info"><div class="name">${esc(e.name)}</div>
-          <div class="meta"><span class="src">${t}</span>${e.amount ? `${r0(e.amount)} ${e.unit||'g'} · ` : ''}${e.time||''} · ${r0(e.p||0)} g protein</div></div>
+          <div class="meta"><span class="srctag">${t}</span>${e.amount ? `${r0(e.amount)} ${e.unit||'g'} · ` : ''}${e.time||''} · ${r0(e.p||0)} g protein</div></div>
           <div class="kcal">${r0(e.kcal)}</div></div>`; }).join('')}</div>`;
     }).join('') : '<div class="empty" style="margin-top:12px">Inget loggat den här perioden</div>';
   } else {
@@ -850,7 +854,7 @@ async function lookup(code, fromScan=false){
   open('prodSheet');
   $('prodBody').innerHTML = `<div class="spin">Söker ${esc(code)}…</div>`;
   try{
-    const get = async c => (await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity,categories_tags`)).json();
+    const get = async c => (await fetch(`https://world.openfoodfacts.org/api/v2/product/${c}.json?fields=product_name,product_name_sv,brands,nutriments,quantity,product_quantity,product_quantity_unit,serving_quantity,serving_size,categories_tags`)).json();
     let j = await get(code);
     if((j.status !== 1 || !j.product) && code.length===12) j = await get('0'+code);   // UPC-A stored as EAN-13
     if(j.status !== 1 || !j.product) throw 'notfound';
@@ -859,8 +863,13 @@ async function lookup(code, fromScan=false){
     if(kcal==null && num(n['energy-kj_100g'])!=null) kcal = num(n['energy-kj_100g'])/4.184;
     if(kcal==null && num(n['energy_100g'])!=null) kcal = num(n['energy_100g'])/4.184;
     const qty = pr.quantity || '';
-    const drink = (pr.categories_tags||[]).some(c => /beverages|drinks|waters|sodas|juices|milks/.test(c));
-    const unit = /\d\s*(ml|cl|dl|l|liter)\b/i.test(qty) || pr.product_quantity_unit==='ml' || drink ? 'ml' : 'g';
+    // unit: the printed package size decides first ("500 g" / "33 cl"); only real drink categories count —
+    // OFF files bread under "plant-based foods and beverages", so a loose match on "beverages" is wrong
+    const DRINK = /^en:(beverages|carbonated-drinks|sodas|soft-drinks|energy-drinks|waters|mineral-waters|juices|fruit-juices|nectars|milks|dairy-drinks|plant-based-milk-alternatives|iced-teas|teas|coffees|beers|wines|ciders|sports-drinks|smoothies)$/;
+    const qUnit = /\d\s*(ml|cl|dl|l|liter|litre)\b/i.test(qty) ? 'ml' : /\d\s*(g|kg|gram)\b/i.test(qty) ? 'g' : null;
+    const unit = qUnit || (pr.product_quantity_unit==='ml' ? 'ml' : pr.product_quantity_unit==='g' ? 'g' : null)
+               || ((pr.categories_tags||[]).some(c => DRINK.test(c)) ? 'ml' : 'g');
+    const serv = parseServing(pr.serving_size, num(pr.serving_quantity));
     const fd = {
       key: code, code, src:'off',
       name: pr.product_name_sv || pr.product_name || 'Okänd produkt',
@@ -868,7 +877,7 @@ async function lookup(code, fromScan=false){
       kcal: kcal ?? 0, missingKcal: kcal==null,
       p: num(n.proteins_100g), c: num(n.carbohydrates_100g), f: num(n.fat_100g),
       s: num(n.sugars_100g), salt: num(n.salt_100g),
-      pack: num(pr.product_quantity) || num(pr.serving_quantity) || null, unit
+      pack: num(pr.product_quantity) || null, unit, serv: serv.g, servName: serv.name
     };
     showProduct(fd, fromScan);
   }catch(e){
@@ -880,6 +889,16 @@ async function lookup(code, fromScan=false){
     $('rescan').onclick = startScan;
     $('addMissing').onclick = () => openEdit({ key:code, code, src:'me', name:'', kcal:null, unit:'g' }, true);
   }
+}
+
+// "1 skiva (40 g)" -> { name:'skiva', g:40 };  "30 g" -> { name:'portion', g:30 }
+function parseServing(text, qty){
+  const t = String(text||'').trim();
+  const g = qty || num((t.match(/([\d.,]+)\s*(g|ml)\b/i)||[])[1]);
+  if(!g || g <= 0) return { g:null, name:'' };
+  let name = t.replace(/\(.*?\)/g,'').replace(/[\d.,]+\s*(g|ml|gram)\b/ig,'').replace(/^\s*1\s+/,'').trim().toLowerCase();
+  if(!name || !/[a-zåäö]/i.test(name) || name.length > 20) name = 'portion';
+  return { g, name };
 }
 
 // ---------- sanity checks for the values that matter (kcal, protein, carbs) ----------
@@ -901,10 +920,12 @@ function checkFood(fd){
 // ---------- product view ----------
 let cur = null, amt = 100;
 function showProduct(fd, fromScan=false){
-  cur = fd; amt = fd.pack || 100;
+  cur = fd; amt = fd.serv || fd.pack || 100;      // a portion is the most likely amount when there is one
   open('prodSheet');
   const u = fd.unit || 'g';
-  const chips = [ fd.pack && {v:fd.pack, l:`Hela (${r0(fd.pack)} ${u})`}, fd.pack && {v:fd.pack/2,l:'Halva'}, {v:100,l:`100 ${u}`} ].filter(Boolean);
+  const sn = fd.servName || 'portion';
+  const chips = [ fd.serv && {v:fd.serv, l:`1 ${sn} (${r0(fd.serv)} ${u})`}, fd.serv && {v:fd.serv*2, l:`2 × ${sn}`},
+    fd.pack && fd.pack !== fd.serv && {v:fd.pack, l:`Hela (${r0(fd.pack)} ${u})`}, fd.pack && {v:fd.pack/2,l:'Halva'}, {v:100,l:`100 ${u}`} ].filter(Boolean);
   $('prodBody').innerHTML = `
     <h3>${esc(fd.name)}</h3>
     <div class="brand">${esc(fd.brand||'')}${fd.code ? ` · ${esc(fd.code)}`:''}</div>
@@ -948,6 +969,7 @@ function addEntry(fd, amount){
   const m = v => v==null ? 0 : v*amount/100;
   (log[k] = log[k] || []).push({
     key: fd.key, name: fd.name, amount, unit: fd.unit||'g',
+    portions: fd.serv ? Math.round(amount/fd.serv*100)/100 : null, servName: fd.servName || null,
     kcal: fd.kcal*amount/100, p:m(fd.p), c:m(fd.c), f:m(fd.f),
     time: `${pad(now.getHours())}:${pad(now.getMinutes())}`
   });
@@ -1119,6 +1141,7 @@ function openEdit(fd, isNew=false){
   $('eKcal').value = fd.missingKcal ? '' : v(fd.kcal); $('ePack').value = v(fd.pack);
   $('eP').value = v(fd.p); $('eC').value = v(fd.c); $('eF').value = v(fd.f);
   $('eS').value = v(fd.s); $('eSalt').value = v(fd.salt);
+  $('eServ').value = v(fd.serv); $('eServName').value = fd.servName || '';
   $('eUnit').textContent = fd.unit || 'g'; editIsNew = isNew;
   document.querySelectorAll('#editSheet .changed').forEach(x => x.classList.remove('changed')); $('eLabelMsg').textContent = '';
   open('editSheet');
@@ -1131,6 +1154,7 @@ $('editSave').onclick = () => {
     name: $('eName').value.trim() || 'Namnlös', kcal, missingKcal:false,
     pack: num($('ePack').value), p:num($('eP').value), c:num($('eC').value), f:num($('eF').value),
     s:num($('eS').value), salt:num($('eSalt').value), unit: $('eUnit').textContent,
+    serv: num($('eServ').value), servName: $('eServName').value.trim() || (num($('eServ').value) ? 'portion' : ''),
     edited: editing.src==='off', used: Date.now() };
   foods[fd.key] = fd; save(); render(); showProduct(fd);
 };
@@ -1142,8 +1166,10 @@ Energi, Fett, varav mättat fett, Kolhydrat, varav sockerarter, Fiber, Protein, 
 Use the per 100 g or per 100 ml column, not per portion. If energy is given only in kJ, convert to kcal (kJ / 4.184).
 Values written like "<0,5" or "<0.5" mean 0. Use null for anything you cannot read.
 Also give the package size in g or ml if it is printed anywhere in the photo, else null.
+If the label states a portion (e.g. "per skiva 40 g", "1 portion = 30 g", a per-portion column header), give its weight
+in g or ml and a short Swedish name for it ("skiva", "portion", "kaka", "bit", "burk"), else null.
 Reply with ONLY this JSON, no other text:
-{"per":"g|ml","kcal":0,"protein":0,"carbs":0,"sugars":0,"fat":0,"salt":0,"package":null,"readable":true}
+{"per":"g|ml","kcal":0,"protein":0,"carbs":0,"sugars":0,"fat":0,"salt":0,"package":null,"portion_grams":null,"portion_name":null,"readable":true}
 If there is no readable nutrition table: {"readable":false}`;
 async function askClaude(system, img, text){
   const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{
@@ -1171,13 +1197,14 @@ $('labelInput').onchange = async e => {
     const r = await askClaude(LABEL_SYS, img, 'Läs av näringstabellen.');
     if(!r.readable){ $('eLabelMsg').innerHTML = '<span style="color:var(--warn)">⚠ Hittade ingen läsbar näringstabell – prova närmare och rakt framifrån.</span>'; return; }
     const v = x => x==null || x==='' ? null : String(Math.round(+x*100)/100).replace('.',',');
-    const fields = [['eKcal',r.kcal],['eP',r.protein],['eC',r.carbs],['eS',r.sugars],['eF',r.fat],['eSalt',r.salt],['ePack',r.package]];
+    const fields = [['eKcal',r.kcal],['eP',r.protein],['eC',r.carbs],['eS',r.sugars],['eF',r.fat],['eSalt',r.salt],['ePack',r.package],['eServ',r.portion_grams]];
     let changed = 0;
     for(const [id,val] of fields){
       const nv = v(val); if(nv==null) continue;
       if(num($(id).value) !== num(nv)){ $(id).value = nv; $(id).classList.add('changed'); changed++; }
     }
     if(r.per === 'ml' || r.per === 'g') $('eUnit').textContent = r.per;
+    if(r.portion_grams && r.portion_name && $('eServName').value !== r.portion_name){ $('eServName').value = r.portion_name; $('eServName').classList.add('changed'); }
     $('eLabelMsg').innerHTML = changed
       ? `<span style="color:var(--accent)">${changed} ${changed===1?'värde':'värden'} uppdaterade från fotot (markerade). Kolla och tryck Spara.</span>`
       : 'Fotot stämmer med värdena som redan står här.';
