@@ -20,7 +20,10 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;touch-action:manipulation;overscroll-behavior-y:none;
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-body{padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 110px)}
+html{height:100%}
+body{height:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 24px}
 button{font:inherit;color:inherit;border:0;cursor:pointer}
 input{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);
   border-radius:10px;padding:10px 12px;width:100%;min-width:0}
@@ -50,7 +53,7 @@ h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute
 .item .kcal{font-weight:600;white-space:nowrap}
 .item .del{background:none;color:var(--muted);font-size:20px;padding:0 4px}
 .empty{padding:22px;text-align:center;color:var(--muted)}
-.fab{position:fixed;left:0;right:0;bottom:0;padding:24px 16px calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:10px;background:linear-gradient(to bottom,transparent,#000 28px)}
+.fab{flex:none;padding:10px 16px max(env(safe-area-inset-bottom), 14px);display:flex;gap:10px;background:#000;border-top:1px solid #111}
 .fab button{flex:1;padding:16px;border-radius:14px;font-weight:600;font-size:17px}
 .primary{background:var(--accent);color:#06210f}
 .secondary{background:var(--card2);color:var(--text)}
@@ -101,13 +104,15 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 .torch{position:absolute;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);font-size:20px}
 .torch.on{background:var(--accent);color:#06210f}
 .linkbtn.center{text-align:center}
+.scanStatus{font-size:12px;color:var(--muted);text-align:center;margin-top:6px;min-height:16px}
 .spin{padding:30px;text-align:center;color:var(--muted)}
-.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 92px);left:50%;transform:translateX(-50%);align-items:center;gap:14px;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
+.toast{position:fixed;bottom:calc(max(env(safe-area-inset-bottom), 14px) + 82px);left:50%;transform:translateX(-50%);align-items:center;gap:14px;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.6);
   background:var(--card2);padding:10px 16px;border-radius:12px;z-index:20;font-size:15px;display:none}
 .toast button{background:none;color:var(--accent);font-weight:700;padding:2px 0}
 </style>
 </head>
 <body>
+<div id="main">
 
 <div class="top">
   <div class="daynav">
@@ -140,6 +145,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 
 <h2 id="recentH">Senaste</h2>
 <div class="list" id="recent"></div>
+</div>
 
 <div class="fab">
   <button class="secondary" id="manualBtn">+ Manuellt</button>
@@ -155,6 +161,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <div class="brand">Streckkoden i rutan – liggande eller stående spelar ingen roll</div>
   <div class="cam"><video id="video" playsinline muted autoplay></video><div class="frame" id="frame"></div>
     <div class="camMsg" id="camMsg">Startar kameran…</div><button class="torch" id="torchBtn" hidden aria-label="Lampa">⚡</button></div>
+  <div class="scanStatus" id="scanStatus"></div>
   <label class="f">Eller skriv in koden</label>
   <div class="row"><input id="codeInput" inputmode="numeric" placeholder="t.ex. 4335619347960"><button class="primary" id="codeGo" style="flex:0 0 80px;border-radius:10px">Sök</button></div>
 </div>
@@ -220,7 +227,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 5</div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 6</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -391,19 +398,20 @@ function closeAll(stop=true){ document.querySelectorAll('.sheet.open').forEach(s
 $('overlay').onclick = () => closeAll();
 
 // ---------- scanner ----------
-// ZXing-C++ (WebAssembly) via the BarcodeDetector ponyfill: reads EAN/UPC at any rotation.
-const BD_URL = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.2.2/dist/es/ponyfill.js';
-let detector = null, detLoading = null;
-function loadDetector(){
-  if(detector) return Promise.resolve(detector);
-  return detLoading = detLoading || import(BD_URL).then(async m => {
-    detector = new m.BarcodeDetector({ formats:['ean_13','ean_8','upc_a','upc_e'] });
-    const warm = document.createElement('canvas'); warm.width = warm.height = 32;
-    await detector.detect(warm).catch(()=>{});            // pulls in + compiles the wasm now, not on first scan
-    return detector;
-  }).catch(e => { detLoading = null; throw e; });
+// ZXing-C++ compiled to WebAssembly, called directly. Reads EAN/UPC at any angle.
+const ZX_URL = 'https://cdn.jsdelivr.net/npm/zxing-wasm@3.1.3/dist/es/reader/index.js';
+// UPC-E is left out on purpose: tiny US-only codes that caused false reads
+const ZX_OPTS = { formats:['EAN13','EAN8','UPCA'], tryHarder:true, tryRotate:true,
+                  tryInvert:false, tryDownscale:true, maxNumberOfSymbols:1 };
+let zx = null, zxLoading = null, zxError = '';
+function loadZX(){
+  if(zx) return Promise.resolve(zx);
+  return zxLoading = zxLoading || import(ZX_URL).then(async m => {
+    await m.prepareZXingModule({ fireImmediately:true });           // download + compile the wasm now
+    zx = m; zxError = ''; return m;
+  }).catch(e => { zxLoading = null; zxError = String(e?.message || e); throw e; });
 }
-// GTIN check digit (EAN-8, UPC-A, EAN-13): rejects most misreads outright
+// GTIN check digit (EAN-8, UPC-A, EAN-13)
 function gtinOK(code){
   if(!/^\d{8}$|^\d{12,13}$/.test(code)) return false;
   let sum = 0; const d = code.split('').map(Number), chk = d.pop();
@@ -411,34 +419,35 @@ function gtinOK(code){
   return (10 - sum%10) % 10 === chk;
 }
 let stream = null, scanning = false, busy = false, hits = {}, torchOn = false;
+let frames = 0, fpsT = 0, decodeMs = 0;
 const ANGLES = [0, 45, 0, 22.5, 0, 67.5]; let angIdx = 0;
 const cropCanvas = document.createElement('canvas'), cropCtx = cropCanvas.getContext('2d', { willReadFrequently:true });
+const status = t => { $('scanStatus').textContent = t; };
 
 async function startScan(){
   open('scanSheet'); $('codeInput').value=''; $('frame').classList.remove('hit');
   $('camMsg').textContent = 'Startar kameran…'; $('camMsg').style.display = 'flex'; $('torchBtn').hidden = true;
-  hits = {}; scanning = true;
+  hits = {}; scanning = true; frames = 0; fpsT = performance.now();
+  status(zx ? 'Läsmotor redo' : 'Laddar läsmotor…');
+  loadZX().then(() => scanning && status('Läsmotor redo')).catch(() => status('Läsmotorn kunde inte laddas: ' + zxError));
   try{
-    const det = loadDetector();
     stream = await navigator.mediaDevices.getUserMedia({ audio:false, video:{
       facingMode:{ ideal:'environment' }, width:{ ideal:1920 }, height:{ ideal:1080 } } });
-    if(!scanning){ stopScan(); return; }                   // closed while waiting for permission
+    if(!scanning){ stopScan(); return; }
     const v = $('video'); v.srcObject = stream; await v.play().catch(()=>{});
+    $('camMsg').style.display = 'none';
     const track = stream.getVideoTracks()[0], caps = track.getCapabilities?.() || {};
     const adv = {};
     if(caps.focusMode?.includes('continuous')) adv.focusMode = 'continuous';
-    // a little zoom lets you hold the phone further back, where the camera can actually focus
-    if(caps.zoom) adv.zoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, 1.8));
+    if(caps.zoom) adv.zoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, 1.8));   // hold further back = sharper focus
     if(Object.keys(adv).length) track.applyConstraints({ advanced:[adv] }).catch(()=>{});
     if(caps.torch){ $('torchBtn').hidden = false; $('torchBtn').classList.toggle('on', torchOn=false); }
-    await det;
-    $('camMsg').style.display = 'none';
     requestAnimationFrame(scanLoop);
   }catch(err){
     const denied = /NotAllowed|Permission/i.test(err?.name+err?.message);
     $('camMsg').innerHTML = denied
-      ? 'Kameran är blockerad.<br><br>Tillåt kamera för sidan i Inställningar → Appar → Safari, eller skriv in koden nedan.'
-      : `Kunde inte starta skannern.<br><small>${esc(err?.message||err)}</small><br><br>Skriv in koden nedan.`;
+      ? 'Kameran är blockerad.<br><br>Tillåt kamera i Inställningar → Appar → Safari → Kamera, eller skriv in koden nedan.'
+      : `Kunde inte starta kameran.<br><small>${esc(err?.name||'')} ${esc(err?.message||err)}</small>`;
     $('camMsg').style.display = 'flex';
   }
 }
@@ -446,35 +455,38 @@ async function startScan(){
 async function scanLoop(){
   if(!scanning) return;
   const v = $('video');
-  if(!busy && v.readyState >= 2 && v.videoWidth){
+  if(zx && !busy && v.readyState >= 2 && v.videoWidth){
     busy = true;
     try{
-      // the visible square (object-fit:cover) — scan a bit more than the frame for tolerance
       const vw = v.videoWidth, vh = v.videoHeight, side = Math.min(vw, vh);
-      const reg = side * 0.86, sx = (vw-reg)/2, sy = (vh-reg)/2, out = Math.min(reg, 900);
+      const reg = side * 0.86, sx = (vw-reg)/2, sy = (vh-reg)/2, out = Math.round(Math.min(reg, 720));
       if(cropCanvas.width !== out) cropCanvas.width = cropCanvas.height = out;
-      // straight frames catch horizontal + vertical; every other frame is tilted to catch diagonal codes
       const ang = ANGLES[angIdx++ % ANGLES.length];
       if(ang){
         cropCtx.fillStyle = '#808080'; cropCtx.fillRect(0, 0, out, out);
-        cropCtx.save(); cropCtx.translate(out/2, out/2); cropCtx.rotate(ang * Math.PI/180);
+        cropCtx.save(); cropCtx.translate(out/2, out/2); cropCtx.rotate(ang*Math.PI/180);
         cropCtx.drawImage(v, sx, sy, reg, reg, -out/2, -out/2, out, out); cropCtx.restore();
       } else cropCtx.drawImage(v, sx, sy, reg, reg, 0, 0, out, out);
-      const res = await detector.detect(cropCanvas);
+      const t0 = performance.now();
+      const res = await zx.readBarcodes(cropCtx.getImageData(0, 0, out, out), ZX_OPTS);
+      decodeMs = decodeMs ? decodeMs*0.8 + (performance.now()-t0)*0.2 : performance.now()-t0;
+      frames++;
       const now = performance.now();
+      if(now - fpsT > 700){ status(`Letar… ${Math.round(frames*1000/(now-fpsT))} bilder/s · ${Math.round(decodeMs)} ms`); frames = 0; fpsT = now; }
       for(const k in hits) if(now - hits[k].t > 1500) delete hits[k];
       for(const r of res){
-        const code = String(r.rawValue||'').replace(/\D/g,'');
-        const ok = r.format==='upc_e' ? code.length===8 : gtinOK(code);
-        if(!ok) continue;
+        if(!r.isValid) continue;
+        const code = String(r.text||'').replace(/\D/g,'');
+        const short = code.length === 8;                            // EAN-8: easier to misread, needs confirming
+        if(!gtinOK(code)) continue;
         const h = hits[code] = { n:(hits[code]?.n||0)+1, t: hits[code]?.t || now };
-        if(h.n >= (r.format==='upc_e' ? 3 : 2)){          // same code twice in a row = trustworthy
-          $('frame').classList.add('hit'); navigator.vibrate?.(40);
-          scanning = false; stopScan(); setTimeout(()=>lookup(code, true), 120);
+        if(h.n >= (short ? 2 : 1)){                                 // EAN-13/UPC-A with valid check digit: accept at once
+          $('frame').classList.add('hit'); status(`Hittade ${code}`); navigator.vibrate?.(40);
+          scanning = false; stopScan(); lookup(code, true);
           busy = false; return;
         }
       }
-    }catch{}
+    }catch(e){ status('Fel vid läsning: ' + (e?.message || e)); }
     busy = false;
   }
   requestAnimationFrame(scanLoop);
@@ -490,8 +502,9 @@ $('torchBtn').onclick = () => {
   torchOn = !torchOn; t.applyConstraints({ advanced:[{ torch:torchOn }] }).catch(()=>{});
   $('torchBtn').classList.toggle('on', torchOn);
 };
-// warm the decoder up in the background so the first scan is instant
-setTimeout(() => loadDetector().catch(()=>{}), 800);
+// load the decoder in the background right away so the first scan is instant
+setTimeout(() => loadZX().catch(()=>{}), 300);
+
 $('scanBtn').onclick = startScan;
 $('codeGo').onclick = () => { const c=$('codeInput').value.replace(/\D/g,''); if(c){ stopScan(); lookup(c); } };
 $('codeInput').onkeydown = e => { if(e.key==='Enter') $('codeGo').click(); };
