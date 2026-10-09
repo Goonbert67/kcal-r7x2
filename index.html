@@ -269,8 +269,13 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 <!-- Quick add -->
 <div class="sheet" id="quickSheet">
   <button class="x" data-close aria-label="Stäng">×</button>
-  <h3>Snabbregistrering</h3>
-  <div class="brand">För restaurangmat eller annat du inte kan skanna. Bara kcal krävs.</div>
+  <h3>Lägg till</h3>
+  <input id="fSearch" type="search" placeholder="Sök livsmedel, t.ex. banan, majs, ris…" autocomplete="off" style="margin-top:10px">
+  <div class="list" id="fResults" style="margin-top:8px;display:none"></div>
+  <div class="brand" id="fSrc" style="font-size:11px;margin-top:6px;display:none">Näringsvärden: Livsmedelsverket, Livsmedelsdatabasen (CC BY 4.0)</div>
+  <div id="quickPart">
+  <h2>Eller snabbregistrera kcal</h2>
+  <div class="brand">För restaurangmat eller annat du inte kan skanna eller hitta. Bara kcal krävs.</div>
   <div class="row">
     <div><label class="f">kcal</label><input id="qKcal" inputmode="decimal"></div>
     <div><label class="f">Protein g</label><input id="qP" inputmode="decimal"></div>
@@ -279,6 +284,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <label class="f">Namn (valfritt)</label><input id="qName" placeholder="t.ex. Lunch ute">
   <div class="btns"><button class="secondary" id="qCancel">Avbryt</button><button class="primary" id="qAdd">Lägg till</button></div>
   <button class="linkbtn" id="qProduct">Spara som produkt med värden per 100 g i stället →</button>
+  </div>
 </div>
 
 <!-- Weight -->
@@ -306,7 +312,8 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 21<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px;font-size:11px">Livsmedelsdata: Livsmedelsverket, Livsmedelsdatabasen (CC BY 4.0). Produktdata: Open Food Facts (ODbL).</div>
+  <div class="brand" style="text-align:center;margin-top:8px">Kalorier · version 23<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <!-- Calendar -->
@@ -533,7 +540,92 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-wdel
   if(b){ delete weights[b.dataset.wdel]; save(); render(); openWeight(); } });
 
 // ---------- quick add ----------
-function openQuick(){ ['qKcal','qP','qC','qName'].forEach(i=>$(i).value=''); open('quickSheet'); setTimeout(()=>$('qKcal').focus(),250); }
+function openQuick(){ ['qKcal','qP','qC','qName','fSearch'].forEach(i=>$(i).value=''); renderSearch(); open('quickSheet'); loadLMV(); }
+
+// ---------- food search: your products + Livsmedelsverket ----------
+let LMV = null, lmvLoading = null;
+function loadLMV(){
+  return LMV ? Promise.resolve(LMV) : lmvLoading = lmvLoading || fetch('lmv.json').then(r => r.json())
+    .then(d => { if(d.source) $('fSrc').textContent = 'Näringsvärden: ' + d.source; return d; })
+    .then(d => LMV = d.foods.map(([nr,name,kcal,p,c,f,s,salt,fiber]) => ({ nr, name, kcal, p, c, f, s, salt, fiber, lc:name.toLowerCase() })))
+    .catch(() => { lmvLoading = null; return []; });
+}
+// typical edible weight of one piece (approximate), so "1 st" works for common whole foods
+const nameWords = name => name.toLowerCase().split(/[\s,()/%-]+/).filter(Boolean);
+const DISH = /torkad|torkade|juice|chips|sylt|mos|pulver|dryck|kaka|paj|soppa|gröt|sallad|sås|smoothie|puré|nektar|marmelad|kompott|friterad|gratäng|röra|välling|olja|choklad|kakao|glutenfri/;
+const NOT_WHOLE = new RegExp(DISH.source + '|konserv|fryst|frysta|vita|gula|skivad|strimlad|tärnad');
+// typical edible weight of one piece (approximate), so "1 st" works for common whole foods.
+// Word-based so it works whichever order Livsmedelsverket writes the name in.
+const PIECES = [[['banan'],120],[['äpple'],140],[['päron'],150],[['apelsin'],140],[['clementin'],60],[['mandarin'],60],[['kiwi'],70],
+  [['nektarin'],130],[['persika'],130],[['plommon'],45],[['avokado'],140],[['ägg'],50],[['potatis'],90],[['morot'],70],[['tomat'],100],
+  [['gurka'],350],[['paprika'],150],[['lök'],100],[['rödlök'],100],[['vitlök'],4],[['majskolv'],150],[['grapefrukt'],250],[['mango'],250],[['knäckebröd'],13]];
+function pieceFor(name){
+  const l = name.toLowerCase(), ws = nameWords(name);
+  if(NOT_WHOLE.test(l) || ws.length > 6) return null;
+  for(const [need, g] of PIECES) if(need.every(w => ws.includes(w))) return g;
+  return null;
+}
+const norm = t => t.toLowerCase().normalize('NFC').trim();
+// everyday basics get a boost so "majs" finds canned corn before corn oil, "ägg" a boiled egg before egg whites.
+// Word sets (any order) so it keeps working when Livsmedelsverket renames "Ägg kokt" <-> "Kokt ägg" etc.
+const COMMON = [['banan'],['äpple'],['päron'],['apelsin'],['majskorn'],['majs','konserv'],['ägg','kokt'],['ägg','stekt'],['ägg','rått'],
+  ['ris','kokt'],['pasta','kokt'],['potatis','kokt'],['kyckling','bröstfilé'],['tonfisk','vatten'],['tonfisk','olja'],['nötfärs'],['lax'],
+  ['havregryn'],['mellanmjölk'],['lättmjölk'],['mjölk','fett'],['broccoli'],['morot'],['gurka'],['tomat'],['keso'],['kvarg'],['yoghurt','naturell']];
+const isCommon = name => { const ws = nameWords(name), l = name.toLowerCase();
+  return ws.length <= 7 && (!DISH.test(l) || /tonfisk/.test(l)) && COMMON.some(set => set.every(w => ws.includes(w)) && set.some(w => ws.slice(0,2).includes(w))); };   // the food itself, not a dish that contains it
+// everyday words -> how Livsmedelsverket names them
+const SYN = [[/^kycklingfil[eé](?=\s|$)|^kycklingbröst(?=\s|$)/,'kyckling bröstfilé'],[/^kycklinglår\b/,'kyckling lår'],[/^kycklingvinge/,'kyckling vinge'],
+  [/^köttfärs\b/,'nötfärs'],[/^lax(filé|file)\b/,'lax'],[/^ris\b(?!.*kokt)(?!.*okokt)/,'ris kokt'],[/^makaroner\b|^spaghetti\b|^spagetti\b/,'pasta kokt'],
+  [/^kokt ägg|^ägg kokt/,'ägg konventionellt kokt'],[/^stekt ägg|^ägg stekt/,'ägg konventionellt stekt'],[/^kokt potatis/,'potatis kokt'],
+  [/^majs (burk|konserv)/,'majskorn konserv'],[/^tonfisk (burk|konserv)/,'tonfisk i vatten'],[/^standardmjölk/,'mjölk fett 3']];
+function searchFoods(q){
+  let t = norm(q); if(t.length < 2) return [];
+  for(const [re, to] of SYN) if(re.test(t)){ t = t.replace(re, to); break; }
+  const words = t.split(/\s+/).filter(Boolean);
+  const score = (name, loose) => {
+    const l = name.toLowerCase(), ws = l.split(/[\s,()/%-]+/).filter(Boolean);
+    // every typed word must start one of the name's words (so "ägg" doesn't match "fläsklägg")
+    const ok = words.every(w => loose ? l.includes(w) : ws.some(x => x.startsWith(w)));
+    if(!ok) return -1;
+    return (l === t ? 1000 : 0) + (ws[0] && ws[0].startsWith(words[0]) ? 300 : 0) + (ws[0] === words[0] ? 200 : 0)
+         + (isCommon(name) ? 600 : 0) - Math.min(l.length, 60);
+  };
+  const run = loose => {
+    const mine = Object.values(foods).map(fd => ({ fd, sc: score(fd.name, loose) })).filter(o => o.sc > -1);
+    const mineKeys = new Set(mine.map(o => o.fd.key));
+    const lmv = (LMV||[]).filter(x => !mineKeys.has('lmv:'+x.nr)).map(x => ({ x, sc: score(x.name, loose) })).filter(o => o.sc > -1);
+    return mine.sort((a,b)=>b.sc-a.sc).slice(0,5).map(o => ({ type:'mine', fd:o.fd }))
+      .concat(lmv.sort((a,b)=>b.sc-a.sc).slice(0,25).map(o => ({ type:'lmv', x:o.x })));
+  };
+  const strict = run(false);
+  return strict.length ? strict : run(true);     // nothing on word starts: fall back to "contains anywhere"
+}
+function lmvFood(x){
+  const g = pieceFor(x.name);
+  return { key:'lmv:'+x.nr, src:'lmv', name:x.name, brand:'Livsmedelsverket', kcal:x.kcal ?? 0, missingKcal: x.kcal==null,
+    p:x.p, c:x.c, f:x.f, s:x.s, salt:x.salt, unit:'g', pack:null, serv:g, servName: g ? 'st' : '' };
+}
+let fHits = [];
+function renderSearch(){
+  const q = $('fSearch').value;
+  fHits = searchFoods(q);
+  const on = q.trim().length >= 2;
+  $('fResults').style.display = on ? '' : 'none';
+  $('fSrc').style.display = on ? '' : 'none';
+  $('quickPart').style.display = on && fHits.length ? 'none' : '';
+  if(!on) return;
+  if(!LMV){ $('fResults').innerHTML = '<div class="empty">Laddar livsmedel…</div>'; return; }
+  $('fResults').innerHTML = fHits.length ? fHits.map((h,i) => {
+    const fd = h.type === 'mine' ? h.fd : null, x = h.x;
+    const name = fd ? fd.name : x.name, kc = fd ? fd.kcal : x.kcal, pr = fd ? fd.p : x.p;
+    return `<div class="item" data-hit="${i}"><div class="info"><div class="name">${esc(name)}</div>
+      <div class="meta">${fd ? '<span class="srctag">Din</span>' : ''}${r0(kc||0)} kcal · ${r1(pr ?? 0)} g protein per 100 ${fd ? (fd.unit||'g') : 'g'}${!fd && pieceFor(x.name) ? ` · 1 st ca ${pieceFor(x.name)} g` : ''}</div></div>
+      <div class="kcal" style="color:var(--accent)">+</div></div>`; }).join('')
+    : '<div class="empty">Inga träffar – prova ett annat ord, eller snabbregistrera nedan</div>';
+}
+$('fSearch').oninput = () => { if(!LMV) loadLMV().then(renderSearch); renderSearch(); };
+$('fResults').onclick = e => { const it = e.target.closest('[data-hit]'); if(!it) return;
+  const h = fHits[+it.dataset.hit]; showProduct(h.type === 'mine' ? h.fd : lmvFood(h.x)); };
 $('qCancel').onclick = () => closeAll();
 $('qAdd').onclick = () => {
   const kcal = num($('qKcal').value);
@@ -609,7 +701,7 @@ $('foodSearch').oninput = renderFoodList;
 
 // ---------- history ----------
 let hTab = 'log', hPer = 'week', hRef = null, hSeq = 0;
-const srcOf = e => e.meal || /^ai:/.test(e.key) ? ['AI'] : /^\d{8,14}$/.test(e.key) ? ['Skannad'] : /^q:/.test(e.key) ? ['Snabb'] : ['Manuell'];
+const srcOf = e => e.meal || /^ai:/.test(e.key) ? ['AI'] : /^lmv:/.test(e.key) ? ['Sökt'] : /^\d{8,14}$/.test(e.key) ? ['Skannad'] : /^q:/.test(e.key) ? ['Snabb'] : ['Manuell'];
 function hRange(){
   const r = new Date(hRef);
   if(hPer === 'week'){ const s = new Date(r); s.setDate(r.getDate() - (r.getDay()+6)%7); const e = new Date(s); e.setDate(s.getDate()+6); return [dkey(s), dkey(e)]; }
@@ -640,7 +732,7 @@ async function renderHist(){
       <div><b>${logged.length ? r0(sum('kcal')/n) : '–'}</b>kcal per dag, snitt</div>
       <div><b>${logged.length ? r0(sum('p')/n)+' g' : '–'}</b>protein per dag, snitt</div>
       <div><b>${logged.length} / ${days.length}</b>dagar loggade</div>
-      <div style="grid-column:span 2"><b>${all.length} saker</b>${count('Skannad')} skannade · ${count('AI')} via AI-foto · ${count('Manuell')} manuella · ${count('Snabb')} snabba</div>`;
+      <div style="grid-column:span 2"><b>${all.length} saker</b>${count('Skannad')} skannade · ${count('Sökt')} sökta · ${count('AI')} via AI-foto · ${count('Manuell')} manuella · ${count('Snabb')} snabba</div>`;
     $('hBody').innerHTML = logged.length ? logged.map(k => {
       const d = new Date(k+'T12:00'), kc = dayKcal(k);
       return `<div class="dayhead"><span>${d.toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'short'}).replace(/^./, c=>c.toUpperCase())}</span><span style="color:${kc>goal*1.05?'var(--warn)':'var(--text)'}">${r0(kc)} kcal</span></div>
@@ -940,10 +1032,10 @@ function showProduct(fd, fromScan=false){
       ${[['Energi','kcal',' kcal'],['Protein','p',' g'],['Kolhydrat','c',' g'],['&nbsp;&nbsp;varav socker','s',' g'],['Fett','f',' g'],['Salt','salt',' g']]
         .map(([l,k,s])=>`<tr class="${['kcal','p','c'].includes(k)?'key':''}"><td>${l}</td><td>${r1(fd[k])}${fd[k]==null?'':s}</td><td data-n="${k}" data-s="${s}"></td></tr>`).join('')}
     </table>
-    <div class="src">${fd.src==='off' && !fd.edited ? 'Från Open Food Facts – snabbkolla kcal, protein och kolhydrat mot förpackningen första gången.' : fd.edited ? 'Dina rättade värden.' : fd.src==='ai' ? 'AI-uppskattning från foto.' : 'Egen produkt.'}</div>
+    <div class="src">${fd.src==='off' && !fd.edited ? 'Från Open Food Facts – snabbkolla kcal, protein och kolhydrat mot förpackningen första gången.' : fd.edited ? 'Dina rättade värden.' : fd.src==='ai' ? 'AI-uppskattning från foto.' : fd.src==='lmv' ? 'Från Livsmedelsverkets livsmedelsdatabas (CC BY 4.0).' + (fd.serv && fd.servName==='st' ? ' 1 st är ett ungefärligt snitt – väg för exakt.' : '') : 'Egen produkt.'}</div>
     <div class="btns"><button class="secondary" id="pEdit">Redigera</button><button class="primary" id="pAdd">Lägg till</button></div>
     ${fromScan ? '<button class="linkbtn center" id="pRescan">Fel vara? Skanna igen</button>' : ''}
-    ${fd.src!=='off' || fd.edited || foods[fd.key] ? '<div class="btns"><button class="secondary" id="pForget" style="color:var(--bad);font-weight:500">Glöm produkten</button></div>' : ''}`;
+    ${foods[fd.key] ? '<div class="btns"><button class="secondary" id="pForget" style="color:var(--bad);font-weight:500">Glöm produkten</button></div>' : ''}`;
   const upd = () => {
     $('pKcal').textContent = r0(fd.kcal*amt/100);
     $('pAmt').textContent = `${r0(amt)} ${u}`;

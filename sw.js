@@ -1,7 +1,7 @@
 // Offline cache for the app shell. Always asks the server first (bypassing the
 // browser's HTTP cache), so a new upload shows up on the next launch.
-const C = 'kalorier-v21';
-const FILES = ['./', 'index.html', 'manifest.json', 'icon.png'];
+const C = 'kalorier-v23';
+const FILES = ['./', 'index.html', 'manifest.json', 'icon.png', 'lmv.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())));
