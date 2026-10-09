@@ -198,7 +198,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
 <div class="wcard" id="waterCard">
   <div class="wtop"><b id="wtNow">0 L</b><span id="wtGoal"></span></div>
   <div class="wbar"><div id="wtFill" style="width:0"></div></div>
-  <div class="wbtns"><button id="wt250">+ Glas 2,5 dl</button><button id="wt500">+ Flaska 5 dl</button><button class="min" id="wtMinus" aria-label="Minska">−</button></div>
+  <div class="wbtns"><button id="wt250">+ Glas 2,5 dl</button><button id="wt1000">+ Flaska 1 L</button><button class="min" id="wtMinus" aria-label="Minska">−</button></div>
 </div>
 
 <h2>Vikt</h2>
@@ -306,7 +306,7 @@ table.n tr.key td:nth-child(2){color:var(--muted)}
   <h2>Data</h2>
   <div class="btns"><button class="secondary" id="exportBtn">Exportera backup</button><button class="secondary" id="importBtn">Importera</button></div>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none">
-  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 19<br><span id="diag" style="font-size:11px"></span></div>
+  <div class="brand" style="text-align:center;margin-top:18px">Kalorier · version 21<br><span id="diag" style="font-size:11px"></span></div>
 </div>
 
 <!-- Calendar -->
@@ -503,10 +503,10 @@ function addWater(d){
   const k = dkey(day), before = water[k] || 0;
   water[k] = Math.max(0, before + d); if(!water[k]) delete water[k];
   save(); renderWater();
-  if(d > 0) toast(`+${(d/100).toString().replace('.',',')} dl vatten`, () => { if(before) water[k] = before; else delete water[k]; save(); renderWater(); });
+  if(d > 0) toast(`+${d >= 1000 ? L(d) : (d/100).toString().replace('.',',')+' dl'} vatten`, () => { if(before) water[k] = before; else delete water[k]; save(); renderWater(); });
 }
 $('wt250').onclick = () => addWater(250);
-$('wt500').onclick = () => addWater(500);
+$('wt1000').onclick = () => addWater(1000);
 $('wtMinus').onclick = () => addWater(-250);
 
 function openWeight(){
@@ -923,7 +923,7 @@ function showProduct(fd, fromScan=false){
   cur = fd; amt = fd.serv || fd.pack || 100;      // a portion is the most likely amount when there is one
   open('prodSheet');
   const u = fd.unit || 'g';
-  const sn = fd.servName || 'portion';
+  const sn = (fd.servName || 'portion').toLowerCase();
   const chips = [ fd.serv && {v:fd.serv, l:`1 ${sn} (${r0(fd.serv)} ${u})`}, fd.serv && {v:fd.serv*2, l:`2 × ${sn}`},
     fd.pack && fd.pack !== fd.serv && {v:fd.pack, l:`Hela (${r0(fd.pack)} ${u})`}, fd.pack && {v:fd.pack/2,l:'Halva'}, {v:100,l:`100 ${u}`} ].filter(Boolean);
   $('prodBody').innerHTML = `
@@ -1167,9 +1167,13 @@ Use the per 100 g or per 100 ml column, not per portion. If energy is given only
 Values written like "<0,5" or "<0.5" mean 0. Use null for anything you cannot read.
 Also give the package size in g or ml if it is printed anywhere in the photo, else null.
 If the label states a portion (e.g. "per skiva 40 g", "1 portion = 30 g", a per-portion column header), give its weight
-in g or ml and a short Swedish name for it ("skiva", "portion", "kaka", "bit", "burk"), else null.
+in g or ml and a short lowercase Swedish name for it ("skiva", "portion", "kaka", "bit", "burk", "flaska"), else null.
+If the table ALSO has a second column for a portion or the whole package (e.g. "PER 500 ml", "per portion 30 g"),
+copy that column exactly as printed into "portion_values" (kcal, protein, carbs, sugars, fat, salt for that amount),
+with "portion_grams" set to that column's amount. Give kcal exactly as printed; if only kJ is printed, convert (kJ / 4.184).
 Reply with ONLY this JSON, no other text:
-{"per":"g|ml","kcal":0,"protein":0,"carbs":0,"sugars":0,"fat":0,"salt":0,"package":null,"portion_grams":null,"portion_name":null,"readable":true}
+{"per":"g|ml","kcal":0,"protein":0,"carbs":0,"sugars":0,"fat":0,"salt":0,"package":null,"portion_grams":null,"portion_name":null,
+ "portion_values":null,"readable":true}
 If there is no readable nutrition table: {"readable":false}`;
 async function askClaude(system, img, text){
   const res = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{
@@ -1196,14 +1200,24 @@ $('labelInput').onchange = async e => {
     const img = await shrinkPhoto(f, 1400);                         // keep it sharp enough for small print
     const r = await askClaude(LABEL_SYS, img, 'Läs av näringstabellen.');
     if(!r.readable){ $('eLabelMsg').innerHTML = '<span style="color:var(--warn)">⚠ Hittade ingen läsbar näringstabell – prova närmare och rakt framifrån.</span>'; return; }
-    const v = x => x==null || x==='' ? null : String(Math.round(+x*100)/100).replace('.',',');
+    // the label's per-portion/per-package column is printed with more precision for that amount (per-100 values
+    // are rounded: 10 kJ shows as "2 kcal"), so work the per-100 values back from it — the whole can then matches the label
+    const pv = r.portion_values, pg = +r.portion_grams;
+    if(pv && pg > 0) for(const [k, k2] of [['kcal','kcal'],['protein','protein'],['carbs','carbs'],['sugars','sugars'],['fat','fat'],['salt','salt']]){
+      const x = pv[k2]; if(x == null || x === '') continue;
+      const per100 = +x / pg * 100;
+      if(r[k] == null || Math.abs(per100 - r[k]) <= Math.max(0.6, Math.abs(r[k])*0.35)) r[k] = per100;   // only if consistent
+    }
+    const v = x => x==null || x==='' ? null : String(Math.round(+x*1000)/1000).replace('.',',');
     const fields = [['eKcal',r.kcal],['eP',r.protein],['eC',r.carbs],['eS',r.sugars],['eF',r.fat],['eSalt',r.salt],['ePack',r.package],['eServ',r.portion_grams]];
     let changed = 0;
     for(const [id,val] of fields){
       const nv = v(val); if(nv==null) continue;
-      if(num($(id).value) !== num(nv)){ $(id).value = nv; $(id).classList.add('changed'); changed++; }
+      const old = num($(id).value);
+      if(old == null || Math.abs(old - num(nv)) > 0.004){ $(id).value = nv; $(id).classList.add('changed'); changed++; }
     }
     if(r.per === 'ml' || r.per === 'g') $('eUnit').textContent = r.per;
+    if(r.portion_name) r.portion_name = String(r.portion_name).toLowerCase();
     if(r.portion_grams && r.portion_name && $('eServName').value !== r.portion_name){ $('eServName').value = r.portion_name; $('eServName').classList.add('changed'); }
     $('eLabelMsg').innerHTML = changed
       ? `<span style="color:var(--accent)">${changed} ${changed===1?'värde':'värden'} uppdaterade från fotot (markerade). Kolla och tryck Spara.</span>`
